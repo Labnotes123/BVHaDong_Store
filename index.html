@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  
+   
   <style>
     body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; }
     
@@ -99,8 +99,8 @@
   <div class="container" style="max-width: 1400px;">
     <ul class="nav nav-pills nav-fill mb-3" id="mainTab" role="tablist">
       <li class="nav-item"><button class="nav-link active" id="btn-tab-nhap" data-bs-toggle="pill" data-bs-target="#tabNhap"><i class="fas fa-file-import"></i> NHẬP KHO</button></li>
-      <li class="nav-item"><button class="nav-link" id="btn-tab-xuat" data-bs-toggle="pill" data-bs-target="#tabXuat"><i class="fas fa-dolly-flatbed"></i> XUẤT KHO</button></li>
-      <li class="nav-item"><button class="nav-link" id="btn-tab-baocao" data-bs-toggle="pill" data-bs-target="#tabBaocao" onclick="loadReport()"><i class="fas fa-chart-pie"></i> BÁO CÁO</button></li>
+      <li class="nav-item"><button class="nav-link" id="btn-tab-xuat" data-bs-toggle="pill" data-bs-target="#tabXuat" onclick="onTabXuatClick()"><i class="fas fa-dolly-flatbed"></i> XUẤT KHO</button></li>
+      <li class="nav-item"><button class="nav-link" id="btn-tab-baocao" data-bs-toggle="pill" data-bs-target="#tabBaocao" onclick="onTabBaocaoClick()"><i class="fas fa-chart-pie"></i> BÁO CÁO</button></li>
       <li class="nav-item" id="navItemAdmin" style="display:none;"><button class="nav-link" id="btn-tab-admin" data-bs-toggle="pill" data-bs-target="#tabAdmin"><i class="fas fa-cogs"></i> QUẢN TRỊ</button></li>
     </ul>
 
@@ -127,14 +127,18 @@
 
       <div class="tab-pane fade" id="tabXuat">
         <div class="card p-4 border-top border-4 border-danger">
-          <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="text-danger fw-bold m-0"><i class="fas fa-truck-loading me-2"></i>Xuất Kho (FEFO)</h5><button class="btn btn-light text-danger border-danger btn-sm" onclick="loadStockForExport(true)"><i class="fas fa-sync-alt me-1"></i> Làm mới tồn kho</button></div>
+          <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="text-danger fw-bold m-0"><i class="fas fa-truck-loading me-2"></i>Xuất Kho (FEFO)</h5>
+              <button class="btn btn-light text-danger border-danger btn-sm" onclick="forceRefreshStock()"><i class="fas fa-sync-alt me-1"></i> Làm mới tồn kho</button>
+          </div>
+          <div id="loadingStockIndicator" class="alert alert-warning small py-1 mb-3" style="display:none;"><i class="fas fa-spinner fa-spin me-2"></i> Đang tải dữ liệu tồn kho mới nhất...</div>
           <form id="formXuat" onsubmit="submitXuat(event)">
              <div class="row g-3">
                <div class="col-md-3"><label class="form-label fw-bold small text-muted">Ngày xuất</label><input type="date" id="xuatNgay" class="form-control" required onchange="checkBackdate()"></div>
                <div class="col-md-3"><label class="form-label fw-bold small text-muted">Người xuất</label><input id="xuatNguoi" class="form-control bg-light" readonly></div>
                <div class="col-md-3"><label class="form-label fw-bold small text-muted">Kho</label><select id="xuatKho" class="form-select" onchange="filterMachine('xuat')" required><option value="">-- Chọn Kho --</option><option value="Hóa sinh">Hóa sinh</option><option value="Huyết học">Huyết học</option><option value="Vi sinh">Vi sinh</option></select></div>
                <div class="col-md-3"><label class="form-label fw-bold small text-muted">Máy</label><select id="xuatMay" class="form-select" onchange="filterChem('xuat')" required></select></div>
-               <div class="col-12"><label class="form-label fw-bold small text-muted">Hóa chất cần xuất</label><input class="form-control border-danger" list="listXuatHC" id="xuatTenHC" onchange="loadStockForExport()" placeholder="Gõ để tìm kiếm..." required><datalist id="listXuatHC"></datalist></div>
+               <div class="col-12"><label class="form-label fw-bold small text-muted">Hóa chất cần xuất</label><input class="form-control border-danger" list="listXuatHC" id="xuatTenHC" onchange="showStockDetails()" placeholder="Gõ để tìm kiếm..." required><datalist id="listXuatHC"></datalist></div>
                <div class="col-12" id="exportContainer"><div class="text-center text-muted p-5 bg-light border rounded"><i class="fas fa-box-open fa-2x mb-2 text-secondary"></i><br>Chọn hóa chất để hiển thị danh sách Lot</div></div>
                <div class="col-12"><label class="form-label fw-bold small text-muted">Lý do xuất</label><div class="input-group"><span class="input-group-text bg-white"><i class="fas fa-pen"></i></span><input type="text" id="xuatLyDo" class="form-control" required list="lyDoGoiY" placeholder="Nhập hoặc chọn lý do..."></div><datalist id="lyDoGoiY"><option value="Chạy mẫu bệnh nhân"><option value="Chạy QC / Nội kiểm"><option value="Hỏng / Đổ vỡ"><option value="Quên không xuất kho"></datalist></div>
                <div class="col-12 text-end"><button type="submit" class="btn btn-danger px-5 fw-bold shadow-sm"><i class="fas fa-paper-plane me-2"></i> XÁC NHẬN XUẤT</button></div>
@@ -150,7 +154,7 @@
              <div class="d-flex gap-2">
                 <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportExcel('tableTonKho', 'Ton_Kho')"><i class="fas fa-file-excel me-1"></i> Excel</button>
                 <button class="btn btn-outline-danger btn-sm fw-bold" onclick="exportPDF('containerTonKho', 'Ton_Kho')"><i class="fas fa-file-pdf me-1"></i> PDF</button>
-                <button class="btn btn-light text-success border-success btn-sm" onclick="loadReport()"><i class="fas fa-sync me-1"></i> Tải lại</button>
+                <button class="btn btn-light text-success border-success btn-sm" onclick="loadReport(true)"><i class="fas fa-sync me-1"></i> Tải lại</button>
              </div>
            </div>
            
@@ -178,9 +182,9 @@
 
         <div class="card p-4 border-top border-4 border-secondary">
           <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold text-secondary m-0"><i class="fas fa-history me-2"></i>LỊCH SỬ HOẠT ĐỘNG</h5>
-             <div class="d-flex gap-2">
-                 <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportHistoryExcel()"><i class="fas fa-file-excel me-1"></i> Excel</button>
-             </div>
+              <div class="d-flex gap-2">
+                  <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportHistoryExcel()"><i class="fas fa-file-excel me-1"></i> Excel</button>
+              </div>
           </div>
           <div class="row g-2 mb-3 bg-light p-3 rounded border">
              <div class="col-md-3"><label class="small fw-bold text-muted">Chọn nhanh</label><select id="histPreset" class="form-select form-select-sm" onchange="applyDatePreset(this.value)"><option value="50">50 Gần nhất</option><option value="7">1 Tuần gần đây</option><option value="14">2 Tuần gần đây</option><option value="30">1 Tháng gần đây</option><option value="90">3 Tháng gần đây</option><option value="180">6 Tháng gần đây</option><option value="365">1 Năm gần đây</option></select></div>
@@ -248,6 +252,10 @@
 
   var DB = { dm: [], stock: {}, history: [], users: [], currentUser: "", currentID: "", role: "" };
   var rowCount = 0; var admRowCount = 0;
+  
+  // SỬA 3: Thêm cờ đánh dấu trạng thái dữ liệu
+  var isStockLoaded = false; // Dùng cho tab Xuất (Load 1 lần đầu)
+  var isReportDirty = true;  // Dùng cho tab Báo cáo (True = cần reload, False = dùng cache)
 
   async function callAPI(action, payload = {}) {
     payload.action = action;
@@ -332,12 +340,76 @@
   function addImportRow(defaultDate) { if(!defaultDate) { var firstDate = document.querySelector('.row-date'); defaultDate = firstDate ? firstDate.value : new Date().toISOString().split('T')[0]; } var idx = rowCount++; var html = `<div class="import-row" id="row_${idx}"><i class="fas fa-times btn-remove-row" onclick="removeRow(${idx})"></i><div class="row g-3"><div class="col-md-3"><label class="form-label fw-bold small text-muted">Ngày nhập</label><input type="date" class="form-control row-date" id="date_${idx}" value="${defaultDate}" required></div><div class="col-md-9"><label class="form-label fw-bold small text-muted">Tên Hóa chất / Test</label><input class="form-control border-primary" list="listNhapHC" id="tenHC_${idx}" onchange="updateRowInput(${idx})" placeholder="Gõ để tìm kiếm..." required></div><input type="hidden" id="loai_${idx}"><input type="hidden" id="dv_${idx}"><div class="col-12" id="inputArea_${idx}"></div></div></div>`; document.getElementById('importRowsContainer').insertAdjacentHTML('beforeend', html); }
   function removeRow(idx) { var row = document.getElementById('row_' + idx); if(row) row.remove(); }
   function updateRowInput(idx) { var tenHC = document.getElementById('tenHC_' + idx).value; var kho = document.getElementById('nhapKho').value; var may = document.getElementById('nhapMay').value; var item = DB.dm.find(r => r[0] == kho && r[1] == may && r[2] == tenHC); var area = document.getElementById('inputArea_' + idx); if(!item) { area.innerHTML = ''; return; } var loai = item[3]; var dv = item[4]; document.getElementById('loai_' + idx).value = loai; document.getElementById('dv_' + idx).value = dv; var html = (loai === 'R1R2') ? `<div class="row g-2"><div class="col-md-6 border-end"><div class="text-primary fw-bold small mb-1">Thành phần R1 / Chính</div><div class="row g-1"><div class="col-4"><input class="form-control form-control-sm" id="lotR1_${idx}" placeholder="Lot R1" required></div><div class="col-4"><input type="date" class="form-control form-control-sm" id="hsdR1_${idx}" required></div><div class="col-4"><input type="number" class="form-control form-control-sm" id="slR1_${idx}" placeholder="SL" required></div></div></div><div class="col-md-6"><div class="text-danger fw-bold small mb-1">Thành phần R2</div><div class="row g-1"><div class="col-4"><input class="form-control form-control-sm" id="lotR2_${idx}" placeholder="Lot R2" required></div><div class="col-4"><input type="date" class="form-control form-control-sm" id="hsdR2_${idx}" required></div><div class="col-4"><input type="number" class="form-control form-control-sm" id="slR2_${idx}" placeholder="SL" required></div></div></div><div class="col-12 text-end text-muted small fst-italic mt-1">Đơn vị: ${dv}</div></div>` : `<div class="row g-2"><div class="col-12"><div class="text-success fw-bold small mb-1">Chi tiết lô hạn</div><div class="row g-1"><div class="col-4"><input class="form-control form-control-sm" id="lotR1_${idx}" placeholder="Lot" required></div><div class="col-4"><input type="date" class="form-control form-control-sm" id="hsdR1_${idx}" required></div><div class="col-4"><input type="number" class="form-control form-control-sm" id="slR1_${idx}" placeholder="SL" required></div></div></div><div class="col-12 text-end text-muted small fst-italic mt-1">Đơn vị: ${dv}</div></div>`; area.innerHTML = html; }
-  async function submitNhapBatch(e) { e.preventDefault(); var kho = document.getElementById('nhapKho').value; var may = document.getElementById('nhapMay').value; var rows = document.querySelectorAll('.import-row'); if(rows.length === 0) return alert("Chưa có dòng dữ liệu nào!"); var dataList = []; var hasError = false; rows.forEach(row => { var idx = row.id.split('_')[1]; var tenHC = document.getElementById('tenHC_' + idx).value; var exists = DB.dm.some(r => r[0] == kho && r[1] == may && r[2] == tenHC); if (!exists) { alert("Dòng hóa chất '" + tenHC + "' không hợp lệ hoặc sai Kho/Máy!"); hasError = true; return; } var itemData = { nguoi: DB.currentUser, kho: kho, may: may, tenHC: tenHC, ngayNhap: document.getElementById('date_' + idx).value, loaiNhap: document.getElementById('loai_' + idx).value, donVi: document.getElementById('dv_' + idx).value, lotR1: document.getElementById('lotR1_' + idx).value, hsdR1: document.getElementById('hsdR1_' + idx).value, slR1: document.getElementById('slR1_' + idx).value, lotR2: document.getElementById('lotR2_' + idx) ? document.getElementById('lotR2_' + idx).value : "", hsdR2: document.getElementById('hsdR2_' + idx) ? document.getElementById('hsdR2_' + idx).value : "", slR2: document.getElementById('slR2_' + idx) ? document.getElementById('slR2_' + idx).value : "" }; dataList.push(itemData); }); if(hasError) return; document.getElementById('loading').style.display = 'flex'; await callAPI('processImport', {dataList: dataList}); alert("Nhập kho thành công!"); setTodayDate(); document.getElementById('loading').style.display = 'none'; }
+  async function submitNhapBatch(e) { e.preventDefault(); var kho = document.getElementById('nhapKho').value; var may = document.getElementById('nhapMay').value; var rows = document.querySelectorAll('.import-row'); if(rows.length === 0) return alert("Chưa có dòng dữ liệu nào!"); var dataList = []; var hasError = false; rows.forEach(row => { var idx = row.id.split('_')[1]; var tenHC = document.getElementById('tenHC_' + idx).value; var exists = DB.dm.some(r => r[0] == kho && r[1] == may && r[2] == tenHC); if (!exists) { alert("Dòng hóa chất '" + tenHC + "' không hợp lệ hoặc sai Kho/Máy!"); hasError = true; return; } var itemData = { nguoi: DB.currentUser, kho: kho, may: may, tenHC: tenHC, ngayNhap: document.getElementById('date_' + idx).value, loaiNhap: document.getElementById('loai_' + idx).value, donVi: document.getElementById('dv_' + idx).value, lotR1: document.getElementById('lotR1_' + idx).value, hsdR1: document.getElementById('hsdR1_' + idx).value, slR1: document.getElementById('slR1_' + idx).value, lotR2: document.getElementById('lotR2_' + idx) ? document.getElementById('lotR2_' + idx).value : "", hsdR2: document.getElementById('hsdR2_' + idx) ? document.getElementById('hsdR2_' + idx).value : "", slR2: document.getElementById('slR2_' + idx) ? document.getElementById('slR2_' + idx).value : "" }; dataList.push(itemData); }); if(hasError) return; document.getElementById('loading').style.display = 'flex'; await callAPI('processImport', {dataList: dataList}); alert("Nhập kho thành công!"); setTodayDate(); document.getElementById('loading').style.display = 'none'; 
+    // SỬA 4: Đánh dấu dữ liệu đã thay đổi để tab Báo cáo load lại
+    isReportDirty = true; 
+    isStockLoaded = false; // Tab xuất cũng cần load lại
+  }
   async function refreshData() { document.getElementById('loading').style.display = 'flex'; await loadInitialData(); alert("Đã cập nhật!"); filterMachine('nhap'); document.getElementById('loading').style.display = 'none'; }
   function filterMachine(type) { var kho = document.getElementById(type + 'Kho').value; var selMay = document.getElementById(type + 'May'); if(type === 'nhap') { document.getElementById('importRowsContainer').innerHTML = ""; rowCount = 0; addImportRow(); } else { document.getElementById('xuatTenHC').value = ""; } var listId = (type === 'nhap' ? 'listNhapHC' : 'listXuatHC'); document.getElementById(listId).innerHTML = ""; selMay.innerHTML = '<option value="">-- Chọn Máy --</option>'; if(!kho) return; var machines = [...new Set(DB.dm.filter(r => r[0] == kho).map(r => r[1]))]; machines.forEach(m => { var opt = document.createElement('option'); opt.value = m; opt.text = m===""?"Không dùng máy":m; selMay.add(opt); }); if(kho === 'Vi sinh' && (machines.length===0 || machines[0]==="")) filterChem(type); }
   function filterChem(type) { var kho = document.getElementById(type + 'Kho').value; var may = document.getElementById(type + 'May').value; if(type === 'nhap') { document.getElementById('importRowsContainer').innerHTML = ""; rowCount = 0; addImportRow(); } else { document.getElementById('xuatTenHC').value = ""; } var listId = (type === 'nhap' ? 'listNhapHC' : 'listXuatHC'); var datalist = document.getElementById(listId); datalist.innerHTML = ""; var chems = DB.dm.filter(r => r[0] == kho && r[1] == may); chems.forEach(c => { var opt = document.createElement('option'); opt.value = c[2]; datalist.appendChild(opt); }); }
   function checkBackdate() { var d = new Date(document.getElementById('xuatNgay').value).setHours(0,0,0,0); var t = new Date().setHours(0,0,0,0); var r = document.getElementById('xuatLyDo'); if(d < t) { r.value="Quên không xuất kho"; r.readOnly=true; } else { r.value=""; r.readOnly=false; } }
-  async function submitXuat(e) { e.preventDefault(); var radioR1 = document.querySelector('input[name="radio_R1"]:checked'); var lotR1 = "", slR1 = ""; if (radioR1) { lotR1 = radioR1.value; slR1 = document.getElementById(`qty_R1_${lotR1}`).value; } var radioR2 = document.querySelector('input[name="radio_R2"]:checked'); var lotR2 = "", slR2 = ""; if (radioR2) { lotR2 = radioR2.value; slR2 = document.getElementById(`qty_R2_${lotR2}`).value; } if (!lotR1 && !lotR2) return alert("Chưa chọn Lot để xuất!"); if ((lotR1 && !slR1) || (lotR2 && !slR2)) return alert("Chưa nhập số lượng xuất!"); document.getElementById('loading').style.display = 'flex'; var data = { ngayXuat: document.getElementById('xuatNgay').value, nguoi: DB.currentUser, kho: document.getElementById('xuatKho').value, may: document.getElementById('xuatMay').value, tenHC: document.getElementById('xuatTenHC').value, lotR1: lotR1, slR1: slR1, lotR2: lotR2, slR2: slR2, loaiChiTiet: (lotR1 && lotR2) ? "Cả 2" : (lotR1 ? "R1" : "R2"), lyDo: document.getElementById('xuatLyDo').value }; await callAPI('processExport', {data: data}); alert("Xuất kho thành công!"); document.getElementById('loading').style.display = 'none'; loadStockForExport(false); }
+  
+  // === LOGIC MỚI CHO TAB XUẤT KHO (CACHE DB.stock) ===
+  async function onTabXuatClick() {
+      if (!isStockLoaded || Object.keys(DB.stock).length === 0) {
+          await forceRefreshStock(false);
+      }
+  }
+
+  async function forceRefreshStock(showAlert = true) {
+      document.getElementById('loadingStockIndicator').style.display = 'block';
+      if(showAlert) document.getElementById('loading').style.display = 'flex';
+      var data = await callAPI('getReport', {from: "", to: ""});
+      DB.stock = data.stock;
+      isStockLoaded = true; 
+      document.getElementById('loadingStockIndicator').style.display = 'none';
+      if(showAlert) {
+          document.getElementById('loading').style.display = 'none';
+          alert("Đã cập nhật dữ liệu tồn kho mới nhất!");
+      }
+      if(document.getElementById('xuatTenHC').value) {
+          showStockDetails();
+      }
+  }
+
+  function showStockDetails() {
+     var area = document.getElementById('exportContainer'); 
+     var tenHC = document.getElementById('xuatTenHC').value; 
+     if(!tenHC) {
+         area.innerHTML = '<div class="text-center text-muted p-5 bg-light border rounded"><i class="fas fa-box-open fa-2x mb-2 text-secondary"></i><br>Chọn hóa chất để hiển thị danh sách Lot</div>';
+         return;
+     }
+     var key = document.getElementById('xuatKho').value + "|" + document.getElementById('xuatMay').value + "|" + tenHC;
+     var item = DB.stock[key];
+     if(!item) { 
+         area.innerHTML = '<div class="text-danger text-center p-3 bg-light border rounded">Không có dữ liệu tồn kho (hoặc chưa nhập kho)</div>'; 
+         return; 
+     } 
+     var htmlR1 = generateLotList('R1', item.R1); 
+     var htmlR2 = generateLotList('R2', item.R2); 
+     var colClass = htmlR2 ? "col-md-6" : "col-12"; 
+     var displayR2 = htmlR2 ? "block" : "none"; 
+     area.innerHTML = `<div class="row g-3"><div class="${colClass}"><div class="p-3 border rounded bg-white h-100 shadow-sm"><div class="fw-bold text-primary mb-3 border-bottom pb-2">Thành phần R1 / Chính</div>${htmlR1 || '<div class="text-muted small fst-italic">Hết hàng</div>'}<div id="fefo_alert_R1" class="alert-fefo"><i class="fas fa-exclamation-triangle me-1"></i> Cảnh báo: Có Lot khác hết hạn sớm hơn!</div></div></div><div class="${colClass}" style="display:${displayR2}"><div class="p-3 border rounded bg-white h-100 shadow-sm"><div class="fw-bold text-danger mb-3 border-bottom pb-2">Thành phần R2</div>${htmlR2 || '<div class="text-muted small fst-italic">Hết hàng</div>'}<div id="fefo_alert_R2" class="alert-fefo"><i class="fas fa-exclamation-triangle me-1"></i> Cảnh báo: Có Lot khác hết hạn sớm hơn!</div></div></div></div>`; 
+  }
+  
+  // === LOGIC MỚI CHO TAB BÁO CÁO (LAZY LOADING) ===
+  // SỬA 5: Hàm xử lý khi bấm vào tab Báo cáo
+  async function onTabBaocaoClick() {
+      // Nếu dữ liệu bẩn (có thay đổi) hoặc chưa có lịch sử -> Load lại
+      if (isReportDirty || DB.history.length === 0) {
+          await loadReport(false); // Load thường (không phải force reload từ nút)
+      } else {
+          // Nếu sạch -> Không làm gì cả, user nhìn thấy dữ liệu cũ ngay lập tức
+          console.log("Dữ liệu báo cáo chưa thay đổi, dùng cache.");
+      }
+  }
+
+  async function submitXuat(e) { e.preventDefault(); var radioR1 = document.querySelector('input[name="radio_R1"]:checked'); var lotR1 = "", slR1 = ""; if (radioR1) { lotR1 = radioR1.value; slR1 = document.getElementById(`qty_R1_${lotR1}`).value; } var radioR2 = document.querySelector('input[name="radio_R2"]:checked'); var lotR2 = "", slR2 = ""; if (radioR2) { lotR2 = radioR2.value; slR2 = document.getElementById(`qty_R2_${lotR2}`).value; } if (!lotR1 && !lotR2) return alert("Chưa chọn Lot để xuất!"); if ((lotR1 && !slR1) || (lotR2 && !slR2)) return alert("Chưa nhập số lượng xuất!"); document.getElementById('loading').style.display = 'flex'; var data = { ngayXuat: document.getElementById('xuatNgay').value, nguoi: DB.currentUser, kho: document.getElementById('xuatKho').value, may: document.getElementById('xuatMay').value, tenHC: document.getElementById('xuatTenHC').value, lotR1: lotR1, slR1: slR1, lotR2: lotR2, slR2: slR2, loaiChiTiet: (lotR1 && lotR2) ? "Cả 2" : (lotR1 ? "R1" : "R2"), lyDo: document.getElementById('xuatLyDo').value }; await callAPI('processExport', {data: data}); alert("Xuất kho thành công!"); document.getElementById('loading').style.display = 'none'; 
+      await forceRefreshStock(false); // Load lại stock cho tab Xuất
+      isReportDirty = true; // SỬA 6: Đánh dấu để tab Báo cáo biết cần load lại
+  }
+
   function openChangePassModal() { document.getElementById('cpUser').value = DB.currentID; document.getElementById('cpOldPass').value = ""; document.getElementById('cpNewPass').value = ""; document.getElementById('cpMsg').innerText = ""; var myModal = new bootstrap.Modal(document.getElementById('modalChangePass')); myModal.show(); }
   async function doChangePass() { var u = document.getElementById('cpUser').value; var oldP = document.getElementById('cpOldPass').value; var newP = document.getElementById('cpNewPass').value; if(!oldP || !newP) return document.getElementById('cpMsg').innerText = "Vui lòng nhập đủ thông tin!"; document.getElementById('loading').style.display = 'flex'; var res = await callAPI('changePassword', {user: u, oldPass: oldP, newPass: newP}); document.getElementById('loading').style.display = 'none'; if(res === "SUCCESS") { alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại."); doLogout(); } else { document.getElementById('cpMsg').innerText = res; } }
   function filterTable(tableId, colIndex, query) { var filter = query.toUpperCase(); var rows = document.getElementById(tableId).getElementsByTagName("tbody")[0].getElementsByTagName("tr"); for (var i = 0; i < rows.length; i++) { var td = rows[i].getElementsByTagName("td")[colIndex]; if (td) rows[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(filter) > -1 ? "" : "none"; } }
@@ -357,34 +429,39 @@
       }
   }
   
-  // FIX CHÍNH: Hàm load tồn kho cho tab xuất kho
-  async function loadStockForExport(manual) { 
-    var area = document.getElementById('exportContainer'); 
-    var tenHC = document.getElementById('xuatTenHC').value; 
-    if(!tenHC && !manual) return; 
-    
-    if(!manual) area.innerHTML = '<div class="local-loader"><div class="spinner-border text-danger" role="status"></div><div class="mt-2 fw-bold">Đang tải dữ liệu kho...</div></div>'; 
-    else document.getElementById('loading').style.display = 'flex'; 
-
-    // GỌI API LẤY TỒN KHO MỚI NHẤT
-    var data = await callAPI('getReport', {from: "", to: ""});
-    DB.stock = data.stock;
-
-    renderExportUI(); 
-    if(manual) { document.getElementById('loading').style.display = 'none'; alert("Đã cập nhật!"); } 
-  }
-  
-  function renderExportUI() { var key = document.getElementById('xuatKho').value + "|" + document.getElementById('xuatMay').value + "|" + document.getElementById('xuatTenHC').value; var item = DB.stock[key]; var area = document.getElementById('exportContainer'); if(!document.getElementById('xuatTenHC').value) { area.innerHTML = '<div class="text-center text-muted p-5 bg-light border rounded"><i class="fas fa-box-open fa-2x mb-2 text-secondary"></i><br>Chọn hóa chất để hiển thị danh sách Lot</div>'; return; } if(!item) { area.innerHTML = '<div class="text-danger text-center p-3 bg-light border rounded">Không có dữ liệu tồn kho</div>'; return; } var htmlR1 = generateLotList('R1', item.R1); var htmlR2 = generateLotList('R2', item.R2); var colClass = htmlR2 ? "col-md-6" : "col-12"; var displayR2 = htmlR2 ? "block" : "none"; area.innerHTML = `<div class="row g-3"><div class="${colClass}"><div class="p-3 border rounded bg-white h-100 shadow-sm"><div class="fw-bold text-primary mb-3 border-bottom pb-2">Thành phần R1 / Chính</div>${htmlR1 || '<div class="text-muted small fst-italic">Hết hàng</div>'}<div id="fefo_alert_R1" class="alert-fefo"><i class="fas fa-exclamation-triangle me-1"></i> Cảnh báo: Có Lot khác hết hạn sớm hơn!</div></div></div><div class="${colClass}" style="display:${displayR2}"><div class="p-3 border rounded bg-white h-100 shadow-sm"><div class="fw-bold text-danger mb-3 border-bottom pb-2">Thành phần R2</div>${htmlR2 || '<div class="text-muted small fst-italic">Hết hàng</div>'}<div id="fefo_alert_R2" class="alert-fefo"><i class="fas fa-exclamation-triangle me-1"></i> Cảnh báo: Có Lot khác hết hạn sớm hơn!</div></div></div></div>`; }
-  function generateLotList(type, listObj) { var arr = []; for(var k in listObj) if(listObj[k].sl > 0) arr.push({lot: k, ...listObj[k]}); arr.sort((a,b) => a.rawHsd - b.rawHsd); var bestDate = arr[0].rawHsd; return arr.map(i => { var isBest = i.rawHsd === bestDate; var cls = isBest ? "lot-best" : "lot-warn"; var icon = isBest ? "✅" : "⚠️"; var inputId = `qty_${type}_${i.lot}`; return `<div class="d-flex align-items-center justify-content-between lot-item ${cls}"><div class="flex-grow-1" onclick="document.getElementById('rad_${inputId}').checked=true; document.getElementById('${inputId}').focus(); checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"><input class="form-check-input me-2" type="radio" name="radio_${type}" id="rad_${inputId}" value="${i.lot}" onchange="checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"><label class="small cursor-pointer" for="rad_${inputId}">${icon} Lot: <b>${i.lot}</b><br><span class="text-muted ms-4">HSD: ${i.hsd} | Tồn: ${i.sl}</span></label></div><div><input type="number" id="${inputId}" class="form-control form-control-sm qty-input" placeholder="SL" min="1" max="${i.sl}" onfocus="document.getElementById('rad_${inputId}').checked=true; checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"></div></div>`; }).join(''); }
+  function generateLotList(type, listObj) { var arr = []; for(var k in listObj) if(listObj[k].sl > 0) arr.push({lot: k, ...listObj[k]}); arr.sort((a,b) => a.rawHsd - b.rawHsd); var bestDate = arr.length > 0 ? arr[0].rawHsd : 0; return arr.map(i => { var isBest = i.rawHsd === bestDate; var cls = isBest ? "lot-best" : "lot-warn"; var icon = isBest ? "✅" : "⚠️"; var inputId = `qty_${type}_${i.lot}`; return `<div class="d-flex align-items-center justify-content-between lot-item ${cls}"><div class="flex-grow-1" onclick="document.getElementById('rad_${inputId}').checked=true; document.getElementById('${inputId}').focus(); checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"><input class="form-check-input me-2" type="radio" name="radio_${type}" id="rad_${inputId}" value="${i.lot}" onchange="checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"><label class="small cursor-pointer" for="rad_${inputId}">${icon} Lot: <b>${i.lot}</b><br><span class="text-muted ms-4">HSD: ${i.hsd} | Tồn: ${i.sl}</span></label></div><div><input type="number" id="${inputId}" class="form-control form-control-sm qty-input" placeholder="SL" min="1" max="${i.sl}" onfocus="document.getElementById('rad_${inputId}').checked=true; checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"></div></div>`; }).join(''); }
   function checkFefo(type, cur, best, count) { var box = document.getElementById('fefo_alert_' + type); if(box) box.style.display = (count > 1 && cur > best) ? 'block' : 'none'; }
   function applyDatePreset(val) { if (val === "50") { document.getElementById('histFrom').value = ""; document.getElementById('histTo').value = ""; } else { var days = parseInt(val); var to = new Date(); var from = new Date(); from.setDate(to.getDate() - days); document.getElementById('histTo').valueAsDate = to; document.getElementById('histFrom').valueAsDate = from; } loadReport(true); }
-  async function loadReport(useFilter) { 
-     var from = "", to = ""; 
-     if (useFilter) { from = document.getElementById('histFrom').value; to = document.getElementById('histTo').value; if (document.getElementById('histPreset').value === "50" && !from) { from = ""; to = ""; } } 
-     document.getElementById('loading').style.display = 'flex';
-     var data = await callAPI('getReport', {from: from, to: to});
-     DB.stock = data.stock; DB.history = data.history; renderReport(); renderHistory(); 
-     document.getElementById('loading').style.display = 'none'; 
+  
+  // SỬA 7: Hàm loadReport được tối ưu hóa
+  async function loadReport(forceReload) { 
+      var from = "", to = ""; 
+      
+      // Nếu không force reload VÀ dữ liệu sạch -> Không làm gì cả (dùng cache)
+      if (!forceReload && !isReportDirty && DB.history.length > 0) {
+          return;
+      }
+
+      // Logic lọc ngày
+      if (document.getElementById('histFrom').value && document.getElementById('histTo').value) { 
+          from = document.getElementById('histFrom').value; 
+          to = document.getElementById('histTo').value; 
+      }
+      
+      // Nếu chọn 50 gần nhất thì reset date để backend tự hiểu
+      if (document.getElementById('histPreset').value === "50" && !from) { from = ""; to = ""; } 
+      
+      document.getElementById('loading').style.display = 'flex';
+      var data = await callAPI('getReport', {from: from, to: to});
+      DB.stock = data.stock; 
+      DB.history = data.history; 
+      
+      renderReport(); 
+      renderHistory(); 
+      
+      // Đánh dấu là dữ liệu đã sạch (mới nhất)
+      isReportDirty = false;
+      document.getElementById('loading').style.display = 'none'; 
   }
   
   function exportExcel(tableId, name) { var wb = XLSX.utils.table_to_book(document.getElementById(tableId), {sheet: "Sheet1"}); XLSX.writeFile(wb, name + "_" + new Date().toISOString().slice(0,10) + ".xlsx"); }
@@ -411,8 +488,7 @@
     });
   }
   
-  // FIX: Ép kiểu Number khi so sánh để không mất màu
-  function renderReport() { var html = ""; var now = new Date().getTime(); DB.dm.forEach(dm => { var key = dm[0] + "|" + dm[1] + "|" + dm[2]; var item = DB.stock[key]; var cfg = { minR: Number(dm[5]||0), minY: Number(dm[6]||0), dayR: Number(dm[7]||0) }; if (!item && (cfg.minR || cfg.minY)) item = {R1:{}, R2:{}}; if (!item) return; var isTwoPart = (dm[3] === 'R1R2'); function buildCol(listObj) { var total = 0; var details = ""; var colorClass = ""; for (var lot in listObj) { var s = listObj[lot]; if (s.sl > 0) { total += s.sl; var daysLeft = (s.rawHsd - now) / (1000*60*60*24); var dateStyle = (cfg.dayR > 0 && daysLeft <= cfg.dayR) ? "lot-expired" : ""; details += `<div class="lot-detail">Lot: <b>${lot}</b> (SL: <b>${s.sl}</b>) | HSD: <span class="${dateStyle}">${s.hsd}</span> (${Math.ceil(daysLeft)} ngày)</div>`; } } if (cfg.minR > 0 && total <= cfg.minR) colorClass = "cell-critical"; else if (cfg.minY > 0 && total <= cfg.minY) colorClass = "cell-warning"; else if (total > 0) colorClass = "cell-ok"; return { html: `<div><span class="total-badge">Tổng: ${total}</span></div>${details}`, cls: colorClass }; } var c1 = buildCol(item.R1); var c2 = isTwoPart ? buildCol(item.R2) : { html: '', cls: 'bg-light' }; if (c1.cls || (isTwoPart && c2.cls) || c1.html.includes('Tổng: 0') === false || (isTwoPart && c2.html.includes('Tổng: 0') === false)) { html += `<tr><td><small class="text-muted">${dm[0]}</small><br><b>${dm[1]}</b></td><td class="fw-bold text-primary">${dm[2]}</td><td class="${c1.cls}">${c1.html}</td><td class="${c2.cls}">${c2.html}</td></tr>`; } }); document.getElementById('reportBody').innerHTML = html; }
+  function renderReport() { var html = ""; var now = new Date().getTime(); function safeParse(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; } DB.dm.forEach(dm => { var key = dm[0] + "|" + dm[1] + "|" + dm[2]; var item = DB.stock[key]; var cfg = { minR: safeParse(dm[5]), minY: safeParse(dm[6]), dayR: safeParse(dm[7]) }; if (!item && (cfg.minR || cfg.minY)) item = {R1:{}, R2:{}}; if (!item) return; var isTwoPart = (dm[3] === 'R1R2'); function buildCol(listObj) { var total = 0; var details = ""; var colorClass = ""; for (var lot in listObj) { var s = listObj[lot]; if (s.sl > 0) { total += s.sl; var daysLeft = (s.rawHsd - now) / (1000*60*60*24); var dateStyle = (cfg.dayR > 0 && daysLeft <= cfg.dayR) ? "lot-expired" : ""; details += `<div class="lot-detail">Lot: <b>${lot}</b> (SL: <b>${s.sl}</b>) | HSD: <span class="${dateStyle}">${s.hsd}</span> (${Math.ceil(daysLeft)} ngày)</div>`; } } if (cfg.minR > 0 && total <= cfg.minR) colorClass = "cell-critical"; else if (cfg.minY > 0 && total <= cfg.minY) colorClass = "cell-warning"; else if (total > 0) colorClass = "cell-ok"; return { html: `<div><span class="total-badge">Tổng: ${total}</span></div>${details}`, cls: colorClass }; } var c1 = buildCol(item.R1); var c2 = isTwoPart ? buildCol(item.R2) : { html: '', cls: 'bg-light' }; if (c1.cls || (isTwoPart && c2.cls) || c1.html.includes('Tổng: 0') === false || (isTwoPart && c2.html.includes('Tổng: 0') === false)) { html += `<tr><td><small class="text-muted">${dm[0]}</small><br><b>${dm[1]}</b></td><td class="fw-bold text-primary">${dm[2]}</td><td class="${c1.cls}">${c1.html}</td><td class="${c2.cls}">${c2.html}</td></tr>`; } }); document.getElementById('reportBody').innerHTML = html; }
 
   // --- SORTING LOGIC ---
   var sortDir = -1; // -1: desc, 1: asc
@@ -439,7 +515,6 @@
 
   function renderHistory() { 
       var html = DB.history.map(h => { 
-          // FIX TRẠNG THÁI HIỂN THỊ DỰA VÀO ACTION BACKEND TRẢ VỀ
           var badge = (h.action === 'NHẬP' || h.type === 'NHẬP') ? '<span class="badge bg-primary">NHẬP</span>' : '<span class="badge bg-danger">XUẤT</span>'; 
           return `<tr>
               <td>${h.timestampStr}</td>
@@ -454,80 +529,21 @@
       document.getElementById('historyBody').innerHTML = html; 
   }
   
-  // ============================================================
-  // HÀM XUẤT EXCEL MỚI (XỬ LÝ RIÊNG CHO LỊCH SỬ)
-  // ============================================================
   function exportHistoryExcel() {
-      // 1. Tạo tiêu đề cột
-      var headers = [
-          "THỜI GIAN", 
-          "NGÀY NHẬP/XUẤT", 
-          "NGƯỜI THỰC HIỆN", 
-          "THAO TÁC", 
-          "KHO", 
-          "MÁY XÉT NGHIỆM", 
-          "TÊN HÓA CHẤT", 
-          "CHI TIẾT", 
-          "LÝ DO"
-      ];
-      
-      // 2. Duyệt qua dữ liệu lịch sử (lấy từ biến DB.history đã được lọc và sort)
-      // Lưu ý: Nếu muốn xuất đúng những gì đang thấy trên bảng (đã filter), ta nên duyệt DOM hoặc filter DB.history lại.
-      // Ở đây tôi sẽ duyệt DB.history để đảm bảo dữ liệu sạch, nhưng chỉ lấy những dòng khớp với ô tìm kiếm (nếu cần).
-      // Đơn giản nhất là duyệt DB.history hiện tại (đã được sort).
-
+      var headers = ["THỜI GIAN", "NGÀY NHẬP/XUẤT", "NGƯỜI THỰC HIỆN", "THAO TÁC", "KHO", "MÁY XÉT NGHIỆM", "TÊN HÓA CHẤT", "CHI TIẾT", "LÝ DO"];
       var data = [headers];
-
-      // Lấy danh sách các dòng TR đang hiển thị để khớp với bộ lọc tìm kiếm
-      var visibleRows = Array.from(document.querySelectorAll("#historyBody tr")).filter(row => row.style.display !== 'none');
-      
-      // Tuy nhiên, để lấy dữ liệu chuẩn xác nhất (không bị dính HTML), ta nên map lại từ DB.history nhưng check điều kiện filter.
-      // Cách nhanh nhất và chính xác nhất theo yêu cầu của bạn là duyệt mảng DB.history.
-      
       DB.history.forEach(item => {
-          // Xử lý tách cột Kho/Máy/Tên
-          var kho = item.kho || "";
-          var may = item.may || "";
-          var ten = item.ten || "";
-
-          // Xử lý chi tiết xuống dòng (Thay <br> bằng \n)
-          // item.detailHtml đang dạng: "<b>R1:</b> ... <br> <b>R2:</b> ..."
-          // Cần strip HTML tags và thay <br> thành \n
+          var kho = item.kho || ""; var may = item.may || ""; var ten = item.ten || "";
           var rawDetail = item.detailHtml || "";
-          // Thay thế <br> bằng xuống dòng
-          var detailText = rawDetail.replace(/<br\s*\/?>/gi, "\n");
-          // Loại bỏ các thẻ HTML còn lại (<b>, </span>...)
-          detailText = detailText.replace(/<[^>]+>/g, "");
-          // Decode các ký tự đặc biệt nếu có (ví dụ &nbsp;) - cơ bản thì replace tag là đủ đọc.
-
-          // Xác định hành động (Nhập/Xuất)
+          var detailText = rawDetail.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
           var actionText = (item.action === 'NHẬP' || item.type === 'NHẬP') ? "NHẬP" : "XUẤT";
-
-          var row = [
-              item.timestampStr,  // 1. Thời gian đầy đủ
-              item.dateDocStr,    // 2. Ngày nhập/xuất dd/mm/yyyy
-              item.user,
-              actionText,
-              kho,                // 3. Tách cột Kho
-              may,                // 3. Tách cột Máy
-              ten,                // 3. Tách cột Tên
-              detailText,         // 4. Chi tiết xuống dòng
-              item.reason
-          ];
+          var row = [item.timestampStr, item.dateDocStr, item.user, actionText, kho, may, ten, detailText, item.reason];
           data.push(row);
       });
-
-      // 3. Tạo Workbook và Worksheet
       var wb = XLSX.utils.book_new();
       var ws = XLSX.utils.aoa_to_sheet(data);
-
-      // Tự động chỉnh độ rộng cột (Optional)
       ws['!cols'] = [{wch:20}, {wch:15}, {wch:20}, {wch:10}, {wch:15}, {wch:15}, {wch:25}, {wch:50}, {wch:20}];
-
-      // Thêm sheet vào workbook
       XLSX.utils.book_append_sheet(wb, ws, "LichSuHoatDong");
-
-      // 4. Xuất file
       XLSX.writeFile(wb, "Lich_Su_Hoat_Dong_" + new Date().toISOString().slice(0,10) + ".xlsx");
   }
 
@@ -569,10 +585,9 @@
   }
 
   window.onload = function() {
-     createResizableTable('tableTonKho');
-     createResizableTable('tableLichSu');
+      createResizableTable('tableTonKho');
+      createResizableTable('tableLichSu');
   };
 </script>
 </body>
-
 </html>
