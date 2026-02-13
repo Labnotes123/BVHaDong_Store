@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHẦN MỀM QUẢN LÝ KHO HÓA CHẤT</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; }
+    
+    #login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .login-box { width: 400px; padding: 40px; background: white; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+    #app-screen { display: none; }
+    
+    .nav-pills { background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .nav-pills .nav-link { color: #555; font-weight: 600; border-radius: 8px; margin: 0 5px; border: 1px solid transparent; }
+    .nav-pills .nav-link:hover { background-color: #f0f0f0; }
+    .nav-pills .nav-link.active#btn-tab-nhap { background-color: #0d6efd; color: white; }
+    .nav-pills .nav-link.active#btn-tab-xuat { background-color: #dc3545; color: white; }
+    .nav-pills .nav-link.active#btn-tab-baocao { background-color: #198754; color: white; }
+    .nav-pills .nav-link.active#btn-tab-admin { background-color: #6610f2; color: white; }
+
+    .card { border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-radius: 10px; margin-bottom: 20px; }
+    .lot-item { border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; margin-bottom: 8px; background: white; cursor: pointer; transition: all 0.2s; }
+    .lot-item:hover { background-color: #f8f9fa; border-color: #0d6efd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .lot-best { border-left: 5px solid #198754; background-color: #f0fff4; } 
+    .lot-warn { border-left: 5px solid #fd7e14; }
+    .qty-input { width: 90px; text-align: center; font-weight: bold; color: #d63384; border: 1px solid #ced4da; border-radius: 5px; }
+    
+    .alert-fefo { background-color: #fff3cd; color: #664d03; padding: 10px; border-radius: 8px; font-size: 0.9em; margin-top: 10px; border: 1px solid #ffecb5; display: none; font-weight: bold; }
+    td.cell-critical { background-color: #f8d7da !important; color: #842029; font-weight: bold; } 
+    td.cell-warning { background-color: #fff3cd !important; color: #664d03; font-weight: bold; } 
+    td.cell-ok { background-color: #d1e7dd !important; color: #0f5132; } 
+    .total-badge { font-weight: bold; font-size: 14px; display: block; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 4px; margin-bottom: 4px; }
+    .lot-detail { font-size: 0.9em; padding: 2px 0; border-bottom: 1px dashed #eee; }
+    .lot-expired { color: red; font-weight: bold; text-decoration: underline; }
+    
+    .filter-input { width: 100%; padding: 5px 10px; font-size: 12px; border: 1px solid #ced4da; border-radius: 5px; margin-top: 5px; }
+    th { vertical-align: top; background-color: #f8f9fa !important; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; color: #555; position: relative; }
+    
+    .sort-icon { font-size: 0.8em; margin-left: 5px; cursor: pointer; color: #aaa; }
+    .sort-icon.active { color: #0d6efd; font-weight: bold; }
+    
+    #tableLichSu th:nth-child(1) { width: 160px; } 
+    #tableLichSu th:nth-child(2) { width: 120px; } 
+    #tableLichSu th:nth-child(3) { width: 120px; } 
+    #tableLichSu th:nth-child(4) { width: 70px; text-align: center; } 
+    #tableLichSu th:nth-child(5) { width: 150px; } 
+    
+    #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; display:none; justify-content:center; align-items:center; }
+    .local-loader { text-align: center; padding: 30px; color: #0d6efd; background: white; border-radius: 8px; border: 1px dashed #ccc; }
+    .filter-color-select { border: 1px solid #ced4da; border-radius: 5px; font-size: 12px; padding: 2px; height: 30px; }
+    
+    #tableAdminDM thead tr:first-child th { background-color: #198754 !important; color: white !important; font-weight: bold; border-bottom: none; }
+    #tableAdminUser thead tr:first-child th { background-color: #ffc107 !important; color: #000 !important; font-weight: bold; border-bottom: none; }
+    .table-admin thead tr.filter-row th { background-color: white !important; padding: 5px; border-bottom: 2px solid #dee2e6; }
+    
+    .resizer { position: absolute; top: 0; right: 0; width: 5px; cursor: col-resize; user-select: none; height: 100%; z-index: 10; }
+    .resizer:hover, .resizing { border-right: 2px solid #0d6efd; }
+  </style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box text-center">
+    <div class="mb-4"><img src="https://i.postimg.cc/0Ms6p8rN/image.png" alt="Logo" style="max-height: 100px; width: auto;"></div>
+    <h4 class="text-dark fw-bold mb-4">PHẦN MỀM QUẢN LÝ KHO HÓA CHẤT</h4>
+    <div class="form-floating mb-3"><input type="text" class="form-control" id="loginUser" placeholder="Tên đăng nhập"><label>Tên đăng nhập</label></div>
+    <div class="form-floating mb-4"><input type="password" class="form-control" id="loginPass" placeholder="Mật khẩu"><label>Mật khẩu</label></div>
+    <button class="btn btn-primary w-100 py-2 fw-bold mb-3 shadow-sm" onclick="doLogin()"><i class="fas fa-sign-in-alt me-2"></i> ĐĂNG NHẬP</button>
+    <div id="loginMsg" class="text-danger mt-3 small fw-bold"></div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4 px-4 sticky-top">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1 text-primary fw-bold"><i class="fas fa-cubes me-2"></i>PHẦN MỀM QUẢN LÝ KHO HÓA CHẤT</span>
+      <div class="d-flex align-items-center">
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle rounded-pill px-3" type="button" id="userMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-user-circle me-1"></i> <span id="userDisplay" class="fw-bold">...</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenuBtn">
+            <li><a class="dropdown-item" href="javascript:void(0)" onclick="openChangePassModal()"><i class="fas fa-key me-2 text-warning"></i> Đổi mật khẩu</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="doLogout()"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width: 1400px;">
+    <ul class="nav nav-pills nav-fill mb-3" id="mainTab" role="tablist">
+      <li class="nav-item"><button class="nav-link active" id="btn-tab-nhap" data-bs-toggle="pill" data-bs-target="#tabNhap"><i class="fas fa-file-import"></i> NHẬP KHO</button></li>
+      <li class="nav-item"><button class="nav-link" id="btn-tab-xuat" data-bs-toggle="pill" data-bs-target="#tabXuat"><i class="fas fa-dolly-flatbed"></i> XUẤT KHO</button></li>
+      <li class="nav-item"><button class="nav-link" id="btn-tab-baocao" data-bs-toggle="pill" data-bs-target="#tabBaocao" onclick="loadReport()"><i class="fas fa-chart-pie"></i> BÁO CÁO</button></li>
+      <li class="nav-item" id="navItemAdmin" style="display:none;"><button class="nav-link" id="btn-tab-admin" data-bs-toggle="pill" data-bs-target="#tabAdmin"><i class="fas fa-cogs"></i> QUẢN TRỊ</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="tabNhap">
+        <div class="card p-4 border-top border-4 border-primary">
+          <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="text-primary fw-bold m-0"><i class="fas fa-plus-circle me-2"></i>Phiếu Nhập Kho (Nhiều dòng)</h5><button class="btn btn-light text-primary border-primary btn-sm" onclick="refreshData()"><i class="fas fa-sync-alt me-1"></i> Làm mới danh mục</button></div>
+          <form id="formNhapBatch" onsubmit="submitNhapBatch(event)">
+            <div class="row g-3 mb-4 p-3 bg-light rounded border">
+               <div class="col-12 fw-bold text-uppercase text-secondary border-bottom pb-2 mb-2">Thông tin chung (Kho & Máy)</div>
+               <div class="col-md-4"><label class="form-label fw-bold small text-muted">Người nhập</label><input id="nhapNguoi" class="form-control" readonly></div>
+               <div class="col-md-4"><label class="form-label fw-bold small text-muted">Kho</label><select id="nhapKho" class="form-select" onchange="filterMachine('nhap')" required><option value="">-- Chọn Kho --</option><option value="Hóa sinh">Hóa sinh</option><option value="Huyết học">Huyết học</option><option value="Vi sinh">Vi sinh</option></select></div>
+               <div class="col-md-4"><label class="form-label fw-bold small text-muted">Máy Xét nghiệm</label><select id="nhapMay" class="form-select" onchange="filterChem('nhap')" required></select></div>
+            </div>
+            <div id="importRowsContainer"></div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+               <button type="button" class="btn btn-outline-primary fw-bold" onclick="addImportRow()"><i class="fas fa-plus-circle me-2"></i> THÊM DÒNG HÓA CHẤT</button>
+               <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm"><i class="fas fa-save me-2"></i> LƯU TẤT CẢ PHIẾU NHẬP</button>
+            </div>
+          </form>
+          <datalist id="listNhapHC"></datalist>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tabXuat">
+        <div class="card p-4 border-top border-4 border-danger">
+          <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="text-danger fw-bold m-0"><i class="fas fa-truck-loading me-2"></i>Xuất Kho (FEFO)</h5><button class="btn btn-light text-danger border-danger btn-sm" onclick="loadStockForExport(true)"><i class="fas fa-sync-alt me-1"></i> Làm mới tồn kho</button></div>
+          <form id="formXuat" onsubmit="submitXuat(event)">
+             <div class="row g-3">
+               <div class="col-md-3"><label class="form-label fw-bold small text-muted">Ngày xuất</label><input type="date" id="xuatNgay" class="form-control" required onchange="checkBackdate()"></div>
+               <div class="col-md-3"><label class="form-label fw-bold small text-muted">Người xuất</label><input id="xuatNguoi" class="form-control bg-light" readonly></div>
+               <div class="col-md-3"><label class="form-label fw-bold small text-muted">Kho</label><select id="xuatKho" class="form-select" onchange="filterMachine('xuat')" required><option value="">-- Chọn Kho --</option><option value="Hóa sinh">Hóa sinh</option><option value="Huyết học">Huyết học</option><option value="Vi sinh">Vi sinh</option></select></div>
+               <div class="col-md-3"><label class="form-label fw-bold small text-muted">Máy</label><select id="xuatMay" class="form-select" onchange="filterChem('xuat')" required></select></div>
+               <div class="col-12"><label class="form-label fw-bold small text-muted">Hóa chất cần xuất</label><input class="form-control border-danger" list="listXuatHC" id="xuatTenHC" onchange="loadStockForExport()" placeholder="Gõ để tìm kiếm..." required><datalist id="listXuatHC"></datalist></div>
+               <div class="col-12" id="exportContainer"><div class="text-center text-muted p-5 bg-light border rounded"><i class="fas fa-box-open fa-2x mb-2 text-secondary"></i><br>Chọn hóa chất để hiển thị danh sách Lot</div></div>
+               <div class="col-12"><label class="form-label fw-bold small text-muted">Lý do xuất</label><div class="input-group"><span class="input-group-text bg-white"><i class="fas fa-pen"></i></span><input type="text" id="xuatLyDo" class="form-control" required list="lyDoGoiY" placeholder="Nhập hoặc chọn lý do..."></div><datalist id="lyDoGoiY"><option value="Chạy mẫu bệnh nhân"><option value="Chạy QC / Nội kiểm"><option value="Hỏng / Đổ vỡ"><option value="Quên không xuất kho"></datalist></div>
+               <div class="col-12 text-end"><button type="submit" class="btn btn-danger px-5 fw-bold shadow-sm"><i class="fas fa-paper-plane me-2"></i> XÁC NHẬN XUẤT</button></div>
+             </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tabBaocao">
+        <div class="card p-4 mb-4 border-top border-4 border-success">
+           <div class="d-flex justify-content-between align-items-center mb-3">
+             <h5 class="fw-bold text-success m-0"><i class="fas fa-list-alt me-2"></i>CHI TIẾT TỒN KHO</h5>
+             <div class="d-flex gap-2">
+                <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportExcel('tableTonKho', 'Ton_Kho')"><i class="fas fa-file-excel me-1"></i> Excel</button>
+                <button class="btn btn-outline-danger btn-sm fw-bold" onclick="exportPDF('containerTonKho', 'Ton_Kho')"><i class="fas fa-file-pdf me-1"></i> PDF</button>
+                <button class="btn btn-light text-success border-success btn-sm" onclick="loadReport()"><i class="fas fa-sync me-1"></i> Tải lại</button>
+             </div>
+           </div>
+           
+           <div id="containerTonKho" class="table-responsive">
+             <table class="table table-bordered table-hover align-middle shadow-sm" id="tableTonKho">
+               <thead class="table-light text-center">
+                 <tr>
+                    <th style="width:15%">KHO / MÁY</th>
+                    <th style="width:20%">HÓA CHẤT</th>
+                    <th style="width:32%">CHI TIẾT R1 / CHÍNH</th>
+                    <th style="width:32%">CHI TIẾT R2</th>
+                 </tr>
+                 <tr class="no-print">
+                   <th><input id="f_kho" class="filter-input" placeholder="🔍 Lọc..." onkeyup="filterTonKho()"></th>
+                   <th><input id="f_ten" class="filter-input" placeholder="🔍 Lọc..." onkeyup="filterTonKho()"></th>
+                   <th><div class="input-group input-group-sm"><select id="f_color_r1" class="form-select px-1 filter-color-select" onchange="filterTonKho()"><option value="">All</option><option value="cell-critical" style="color:#842029; font-weight:bold">🔴</option><option value="cell-warning" style="color:#664d03; font-weight:bold">🟡</option><option value="cell-ok" style="color:#0f5132; font-weight:bold">🟢</option></select><input id="f_text_r1" class="form-control filter-input mt-0" placeholder="🔍 Lot..." onkeyup="filterTonKho()"></div></th>
+                   <th><div class="input-group input-group-sm"><select id="f_color_r2" class="form-select px-1 filter-color-select" onchange="filterTonKho()"><option value="">All</option><option value="cell-critical" style="color:#842029; font-weight:bold">🔴</option><option value="cell-warning" style="color:#664d03; font-weight:bold">🟡</option><option value="cell-ok" style="color:#0f5132; font-weight:bold">🟢</option></select><input id="f_text_r2" class="form-control filter-input mt-0" placeholder="🔍 Lot..." onkeyup="filterTonKho()"></div></th>
+                 </tr>
+               </thead>
+               <tbody id="reportBody" class="bg-white"></tbody>
+             </table>
+           </div>
+           <div class="mt-2 text-center small"><span class="badge bg-danger me-2">Đỏ: Sắp hết / Hết hạn</span> <span class="badge bg-warning text-dark">Vàng: Cảnh báo / Sắp hết hạn</span> <span class="badge bg-success ms-2">Xanh: An toàn</span></div>
+        </div>
+
+        <div class="card p-4 border-top border-4 border-secondary">
+          <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold text-secondary m-0"><i class="fas fa-history me-2"></i>LỊCH SỬ HOẠT ĐỘNG</h5>
+             <div class="d-flex gap-2">
+                 <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportHistoryExcel()"><i class="fas fa-file-excel me-1"></i> Excel</button>
+             </div>
+          </div>
+          <div class="row g-2 mb-3 bg-light p-3 rounded border">
+             <div class="col-md-3"><label class="small fw-bold text-muted">Chọn nhanh</label><select id="histPreset" class="form-select form-select-sm" onchange="applyDatePreset(this.value)"><option value="50">50 Gần nhất</option><option value="7">1 Tuần gần đây</option><option value="14">2 Tuần gần đây</option><option value="30">1 Tháng gần đây</option><option value="90">3 Tháng gần đây</option><option value="180">6 Tháng gần đây</option><option value="365">1 Năm gần đây</option></select></div>
+             <div class="col-md-3"><label class="small fw-bold text-muted">Từ ngày</label><input type="date" id="histFrom" class="form-control form-control-sm"></div>
+             <div class="col-md-3"><label class="small fw-bold text-muted">Đến ngày</label><input type="date" id="histTo" class="form-control form-control-sm"></div>
+             <div class="col-md-3 d-flex align-items-end"><button class="btn btn-secondary btn-sm w-100 fw-bold" onclick="loadReport(true)"><i class="fas fa-filter me-1"></i> LỌC DỮ LIỆU</button></div>
+          </div>
+          <div id="containerLichSu" class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+             <table class="table table-striped table-sm text-nowrap" id="tableLichSu">
+                <thead class="table-light sticky-top" style="z-index: 5;">
+                   <tr>
+                      <th onclick="sortHistory('sortTime')">THỜI GIAN <i id="icon_sortTime" class="fas fa-sort sort-icon"></i></th>
+                      <th onclick="sortHistory('dateDocStr')">NGÀY NHẬP/XUẤT <i id="icon_dateDocStr" class="fas fa-sort sort-icon"></i></th>
+                      <th>NGƯỜI</th>
+                      <th class="text-center">THAO TÁC</th>
+                      <th>KHO/MÁY/TÊN</th>
+                      <th>CHI TIẾT</th>
+                      <th>LÝ DO</th>
+                   </tr>
+                   <tr class="no-print">
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',0,this.value)"></th>
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',1,this.value)"></th>
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',2,this.value)"></th>
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',3,this.value)"></th>
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',4,this.value)"></th>
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',5,this.value)"></th>
+                      <th><input class="filter-input" onkeyup="filterTable('tableLichSu',6,this.value)"></th>
+                   </tr>
+                </thead>
+                <tbody id="historyBody" class="bg-white"></tbody>
+             </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tabAdmin">
+         <div class="card p-4 mb-4 border-top border-4 border-success">
+           <div class="d-flex justify-content-between align-items-center mb-3">
+             <h5 class="fw-bold text-success m-0"><i class="fas fa-boxes me-2"></i>QUẢN LÝ DANH MỤC</h5>
+             <div><button class="btn btn-outline-info btn-sm fw-bold me-2" onclick="loadInitialData()"><i class="fas fa-sync"></i> LÀM MỚI</button><button class="btn btn-outline-dark btn-sm fw-bold me-2" onclick="openModalManageMachine()"><i class="fas fa-cogs me-1"></i> CẤU HÌNH MÁY</button><button class="btn btn-success btn-sm fw-bold" onclick="openModalDM()"><i class="fas fa-plus me-1"></i> THÊM HÓA CHẤT</button></div>
+           </div>
+           <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+             <table class="table table-bordered table-hover table-sm table-admin" id="tableAdminDM"><thead class="sticky-top"><tr><th>KHO</th><th>MÁY</th><th>TÊN</th><th>LOẠI</th><th>ĐV</th><th>SL ĐỎ</th><th>SL VÀNG</th><th>DATE ĐỎ</th><th>DATE VÀNG</th><th>#</th></tr><tr class="filter-row"><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminDM',0,this.value)"></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminDM',1,this.value)"></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminDM',2,this.value)"></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminDM',3,this.value)"></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminDM',4,this.value)"></th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody id="bodyAdminDM" class="bg-white small"></tbody></table>
+           </div>
+        </div>
+        <div class="card p-4 border-top border-4 border-warning">
+           <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold text-dark m-0" style="color:#bfa100 !important"><i class="fas fa-users-cog me-2"></i>QUẢN LÝ TÀI KHOẢN</h5><button class="btn btn-warning btn-sm fw-bold" onclick="openModalUser()"><i class="fas fa-user-plus me-1"></i> THÊM USER</button></div>
+           <div class="table-responsive"><table class="table table-bordered table-hover table-sm table-admin" id="tableAdminUser"><thead class="table-light"><tr><th>USER</th><th>PASS</th><th>HỌ TÊN</th><th>QUYỀN</th><th>TRẠNG THÁI</th><th>#</th></tr><tr class="filter-row"><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminUser',0,this.value)"></th><th></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminUser',2,this.value)"></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminUser',3,this.value)"></th><th><input class="filter-input" onkeyup="filterAdminTable('tableAdminUser',4,this.value)"></th><th></th></tr></thead><tbody id="bodyAdminUser" class="bg-white small"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalChangePass" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title fw-bold">Đổi Mật Khẩu</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-3"><label>Tài khoản</label><input type="text" class="form-control bg-light" id="cpUser" readonly></div><div class="mb-3"><label>Mật khẩu cũ</label><input type="password" class="form-control" id="cpOldPass"></div><div class="mb-3"><label>Mật khẩu mới</label><input type="password" class="form-control" id="cpNewPass"></div><div id="cpMsg" class="text-danger small fw-bold"></div></div><div class="modal-footer"><button type="button" class="btn btn-primary" onclick="doChangePass()">Lưu</button></div></div></div></div>
+<div class="modal fade" id="modalAdminDM" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header bg-success text-white"><h5 class="modal-title fw-bold" id="titleAdmDM">THÊM HÓA CHẤT (HÀNG LOẠT)</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light"><input type="hidden" id="admOldKey"><div class="row g-3 mb-3 p-3 bg-white rounded border"><div class="col-md-3"><label class="fw-bold">Chọn Kho:</label><select id="admKho" class="form-select" onchange="changeAdmKho()"><option>Hóa sinh</option><option>Huyết học</option><option>Vi sinh</option></select></div><div class="col-md-9 d-flex align-items-end"><span class="text-muted small ms-2"><i class="fas fa-info-circle"></i> Chọn kho trước, sau đó thêm danh sách hóa chất bên dưới. Máy sẽ load theo kho đã chọn.</span></div></div><div id="admRowsContainer"></div><div class="mt-3"><button type="button" class="btn btn-outline-success btn-sm fw-bold" onclick="addAdmRow()"><i class="fas fa-plus"></i> THÊM DÒNG</button></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button><button type="button" class="btn btn-success fw-bold" onclick="saveAdminDMBatch()">LƯU TẤT CẢ</button></div></div></div></div>
+<div class="modal fade" id="modalManageMachine" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-secondary text-white"><h5 class="modal-title fw-bold">CẤU HÌNH TÊN MÁY</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="alert alert-info small">Chức năng này dùng để sửa tên máy hàng loạt trong danh mục.</div><div class="mb-3"><label>Chọn Kho</label><select id="manKho" class="form-select" onchange="loadMachinesForManage()"><option>Hóa sinh</option><option>Huyết học</option><option>Vi sinh</option></select></div><div class="mb-3"><label>Chọn Máy cần sửa</label><select id="manOldName" class="form-select"></select></div><div class="mb-3"><label>Nhập Tên mới</label><input id="manNewName" class="form-control" placeholder="Ví dụ: Cobas e411"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button type="button" class="btn btn-primary" onclick="submitRenameMachine()">CẬP NHẬT TÊN MÁY</button></div></div></div></div>
+<div class="modal fade" id="modalAdminUser" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-warning"><h5 class="modal-title fw-bold text-dark">THÔNG TIN USER</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="mb-2"><label>Tên đăng nhập</label><input id="admUserU" class="form-control"></div><div class="mb-2"><label>Mật khẩu</label><input id="admUserP" class="form-control"></div><div class="mb-2"><label>Họ tên</label><input id="admUserN" class="form-control"></div><div class="row"><div class="col-6"><label>Quyền</label><select id="admUserR" class="form-select"><option value="User">User</option><option value="Admin">Admin</option></select></div><div class="col-6"><label>Trạng thái</label><select id="admUserS" class="form-select"><option value="Active">Active</option><option value="Block">Block</option></select></div></div></div><div class="modal-footer"><button type="button" class="btn btn-warning" onclick="saveAdminUser()">LƯU TÀI KHOẢN</button></div></div></div></div>
+<datalist id="listAdmUnits"></datalist>
+<div id="loading"><div class="text-center bg-white p-4 rounded shadow"><div class="spinner-border text-primary" role="status"></div><div class="mt-3 fw-bold text-primary">Đang xử lý...</div></div></div>
+
+<script>
+  // API URL CỦA BẠN (Cập nhật link mới từ Backend)
+  const API_URL = "https://script.google.com/macros/s/AKfycbxUx9Cl8loSIkeAKBGqDCul50vntTxEUJuWsYljP4qKpO3qsNwUtuypbkdTGgQOqLjgFg/exec";
+
+  var DB = { dm: [], stock: {}, history: [], users: [], currentUser: "", currentID: "", role: "" };
+  var rowCount = 0; var admRowCount = 0;
+
+  async function callAPI(action, payload = {}) {
+    payload.action = action;
+    try {
+        const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+        const textData = await response.text();
+        try { return JSON.parse(textData); } 
+        catch (e) { console.error("Lỗi JSON:", textData); return { success: false, msg: "Lỗi dữ liệu" }; }
+    } catch (error) {
+        console.error("API Error:", error); alert("Lỗi kết nối Server"); return { success: false, msg: error };
+    }
+  }
+
+  document.getElementById("loginUser").addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); document.getElementById("loginPass").focus(); } });
+  document.getElementById("loginPass").addEventListener("keydown", function(e) { if (e.key === "Enter") { e.preventDefault(); doLogin(); } });
+
+  function setTodayDate() {
+    var d = new Date(), m = ''+(d.getMonth()+1), day = ''+d.getDate(), y = d.getFullYear();
+    if(m.length<2) m='0'+m; if(day.length<2) day='0'+day;
+    var todayStr = [y, m, day].join('-');
+    document.getElementById('xuatNgay').value = todayStr;
+    document.getElementById('importRowsContainer').innerHTML = ""; rowCount = 0; addImportRow(todayStr); 
+  }
+
+  async function doLogin() {
+    var u = document.getElementById('loginUser').value; var p = document.getElementById('loginPass').value;
+    if(!u || !p) return document.getElementById('loginMsg').innerText = "Vui lòng nhập đầy đủ!";
+    document.getElementById('loading').style.display = 'flex';
+    const res = await callAPI('login', {u: u, p: p});
+    document.getElementById('loading').style.display = 'none';
+    if(res.success) { showApp(res.name, res.user, res.role); } 
+    else { document.getElementById('loginMsg').innerText = res.msg || "Lỗi đăng nhập"; }
+  }
+
+  function showApp(name, uid, role) {
+    DB.currentUser = name; DB.currentID = uid; DB.role = role;
+    document.getElementById('userDisplay').innerText = name + (role === 'Admin' ? ' (Admin)' : '');
+    document.getElementById('nhapNguoi').value = name; document.getElementById('xuatNguoi').value = name;
+    document.getElementById('navItemAdmin').style.display = (role === 'Admin') ? 'block' : 'none';
+    document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block';
+    setTodayDate(); loadInitialData();
+  }
+
+  function doLogout() { window.location.reload(); }
+
+  async function loadInitialData() {
+    var isAdmin = (DB.role === 'Admin');
+    const data = await callAPI('getInitialData', {isAdmin: isAdmin});
+    if(data) {
+       DB.dm = data.dm || []; DB.users = data.users || [];
+       if(isAdmin) renderAdminTables();
+    }
+  }
+
+  function filterAdminTable(tableId, colIndex, query) {
+    var filter = query.toUpperCase();
+    var rows = document.getElementById(tableId).getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (var i = 0; i < rows.length; i++) {
+      var td = rows[i].getElementsByTagName("td")[colIndex];
+      if (td) rows[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(filter) > -1 ? "" : "none";
+    }
+  }
+
+  // --- ADMIN FUNCTIONS --- 
+  function renderAdminTables() { var htmlDM = DB.dm.map(d => { var key = `${d[0]}|${d[1]}|${d[2]}`; return `<tr><td>${d[0]}</td><td>${d[1]}</td><td class="fw-bold">${d[2]}</td><td>${d[3]}</td><td>${d[4]}</td><td class="text-danger text-center fw-bold">${d[5]}</td><td class="text-warning text-center fw-bold">${d[6]}</td><td class="text-danger text-center">${d[7]}</td><td class="text-warning text-center">${d[8]}</td><td><button class="btn btn-outline-primary btn-action btn-sm" onclick="editDM('${key}')"><i class="fas fa-edit"></i></button> <button class="btn btn-outline-danger btn-action btn-sm" onclick="delDM('${key}')"><i class="fas fa-trash"></i></button></td></tr>`; }).join(''); document.getElementById('bodyAdminDM').innerHTML = htmlDM; var htmlUser = DB.users.map(u => { var cls = u[4] === 'Active' ? 'text-success' : 'text-danger fw-bold'; return `<tr><td class="fw-bold">${u[0]}</td><td>***</td><td>${u[2]}</td><td>${u[3]}</td><td class="${cls}">${u[4]}</td><td><button class="btn btn-outline-warning btn-action btn-sm" onclick="editUser('${u[0]}')"><i class="fas fa-edit"></i></button> <button class="btn btn-outline-danger btn-action btn-sm" onclick="delUser('${u[0]}')"><i class="fas fa-trash"></i></button></td></tr>`; }).join(''); document.getElementById('bodyAdminUser').innerHTML = htmlUser; }
+  function openModalDM() { document.getElementById('admOldKey').value = ""; document.getElementById('titleAdmDM').innerText = "THÊM HÓA CHẤT (HÀNG LOẠT)"; document.getElementById('admRowsContainer').innerHTML = ""; admRowCount = 0; var uniqueUnits = [...new Set(DB.dm.map(r => r[4]))]; var dl = document.getElementById('listAdmUnits'); dl.innerHTML = ""; uniqueUnits.forEach(u => { if(u) dl.innerHTML += `<option value="${u}">`; }); changeAdmKho(); addAdmRow(); new bootstrap.Modal(document.getElementById('modalAdminDM')).show(); }
+  function editDM(key) { var item = DB.dm.find(d => `${d[0]}|${d[1]}|${d[2]}` === key); if (!item) return; document.getElementById('admOldKey').value = key; document.getElementById('titleAdmDM').innerText = "SỬA THÔNG TIN HÓA CHẤT"; document.getElementById('admKho').value = item[0]; document.getElementById('admRowsContainer').innerHTML = ""; admRowCount = 0; var idx = admRowCount++; var machineOptions = getMachineOptions(item[0]); var html = `<div class="import-row" id="admRow_${idx}"><div class="row g-2"><div class="col-md-2"><label class="small text-muted">Máy</label><input list="listMac_${idx}" class="form-control form-control-sm" id="admMay_${idx}" value="${item[1]}"><datalist id="listMac_${idx}">${machineOptions}</datalist></div><div class="col-md-3"><label class="small text-muted">Tên HC</label><input class="form-control form-control-sm" id="admTen_${idx}" value="${item[2]}"></div><div class="col-md-2"><label class="small text-muted">Loại</label><select class="form-select form-select-sm" id="admLoai_${idx}"><option value="R1R2" ${item[3]=='R1R2'?'selected':''}>R1R2</option><option value="Single" ${item[3]=='Single'?'selected':''}>Single</option></select></div><div class="col-md-1"><label class="small text-muted">ĐV</label><input list="listAdmUnits" class="form-control form-control-sm" id="admDV_${idx}" value="${item[4]}"></div><div class="col-md-1"><label class="small text-danger">SL Đỏ</label><input type="number" class="form-control form-control-sm" id="admMinR_${idx}" value="${item[5]}"></div><div class="col-md-1"><label class="small text-warning">SL Vàng</label><input type="number" class="form-control form-control-sm" id="admMinY_${idx}" value="${item[6]}"></div><div class="col-md-1"><label class="small text-danger">Date Đỏ</label><input type="number" class="form-control form-control-sm" id="admHanR_${idx}" value="${item[7]}"></div><div class="col-md-1"><label class="small text-warning">Date Vàng</label><input type="number" class="form-control form-control-sm" id="admHanY_${idx}" value="${item[8]}"></div></div></div>`; document.getElementById('admRowsContainer').innerHTML = html; new bootstrap.Modal(document.getElementById('modalAdminDM')).show(); }
+  function changeAdmKho() { var kho = document.getElementById('admKho').value; var machineOptions = getMachineOptions(kho); var datalists = document.querySelectorAll('#admRowsContainer datalist'); datalists.forEach(dl => { dl.innerHTML = machineOptions; }); }
+  function getMachineOptions(kho) { var machines = [...new Set(DB.dm.filter(r => String(r[0]).trim() == kho).map(r => r[1]))]; return machines.map(m => `<option value="${m}">`).join(''); }
+  function addAdmRow() { var kho = document.getElementById('admKho').value; var idx = admRowCount++; var machineOptions = getMachineOptions(kho); var html = `<div class="import-row position-relative" id="admRow_${idx}"><i class="fas fa-times btn-remove-row" onclick="document.getElementById('admRow_${idx}').remove()"></i><div class="row g-2"><div class="col-md-2"><label class="small text-muted">Máy</label><input list="listMac_${idx}" class="form-control form-control-sm" id="admMay_${idx}" placeholder="Chọn/Nhập máy"><datalist id="listMac_${idx}">${machineOptions}</datalist></div><div class="col-md-3"><label class="small text-muted">Tên HC</label><input class="form-control form-control-sm" id="admTen_${idx}" placeholder="Tên hóa chất"></div><div class="col-md-2"><label class="small text-muted">Loại</label><select class="form-select form-select-sm" id="admLoai_${idx}"><option value="R1R2">R1R2</option><option value="Single">Single</option></select></div><div class="col-md-1"><label class="small text-muted">ĐV</label><input list="listAdmUnits" class="form-control form-control-sm" id="admDV_${idx}"></div><div class="col-md-1"><label class="small text-danger">SL Đỏ</label><input type="number" class="form-control form-control-sm" id="admMinR_${idx}" value="0"></div><div class="col-md-1"><label class="small text-warning">SL Vàng</label><input type="number" class="form-control form-control-sm" id="admMinY_${idx}" value="0"></div><div class="col-md-1"><label class="small text-danger">Date Đỏ</label><input type="number" class="form-control form-control-sm" id="admHanR_${idx}" value="10"></div><div class="col-md-1"><label class="small text-warning">Date Vàng</label><input type="number" class="form-control form-control-sm" id="admHanY_${idx}" value="30"></div></div></div>`; document.getElementById('admRowsContainer').insertAdjacentHTML('beforeend', html); }
+  async function saveAdminDMBatch() { var kho = document.getElementById('admKho').value; var rows = document.querySelectorAll('#admRowsContainer .import-row'); if (rows.length === 0) return alert("Chưa có dòng nào!"); var dataList = []; var oldKey = document.getElementById('admOldKey').value; var uniqueUnits = [...new Set(DB.dm.map(r => r[4]))]; function validateUnit(uInput) { if (!uInput) return ""; var match = uniqueUnits.find(u => u.toLowerCase() === uInput.toLowerCase()); return match ? match : uInput; } document.getElementById('loading').style.display = 'flex'; if (oldKey) { var idx = rows[0].id.split('_')[1]; var singleData = { kho: kho, may: document.getElementById('admMay_' + idx).value, ten: document.getElementById('admTen_' + idx).value, loai: document.getElementById('admLoai_' + idx).value, dv: validateUnit(document.getElementById('admDV_' + idx).value), minR: document.getElementById('admMinR_' + idx).value, minY: document.getElementById('admMinY_' + idx).value, hanR: document.getElementById('admHanR_' + idx).value, hanY: document.getElementById('admHanY_' + idx).value }; if(!singleData.may || !singleData.ten) { document.getElementById('loading').style.display = 'none'; return alert("Vui lòng nhập đủ Máy và Tên!"); } await callAPI('updateDMSingle', {data: singleData, oldKey: oldKey}); } else { rows.forEach(row => { var idx = row.id.split('_')[1]; dataList.push({ kho: kho, may: document.getElementById('admMay_' + idx).value, ten: document.getElementById('admTen_' + idx).value, loai: document.getElementById('admLoai_' + idx).value, dv: validateUnit(document.getElementById('admDV_' + idx).value), minR: document.getElementById('admMinR_' + idx).value, minY: document.getElementById('admMinY_' + idx).value, hanR: document.getElementById('admHanR_' + idx).value, hanY: document.getElementById('admHanY_' + idx).value }); }); await callAPI('saveDMBatch', {dataList: dataList}); } bootstrap.Modal.getInstance(document.getElementById('modalAdminDM')).hide(); await loadInitialData(); document.getElementById('loading').style.display = 'none'; }
+  async function delDM(key) { if(!confirm("Xóa hóa chất này?")) return; document.getElementById('loading').style.display = 'flex'; await callAPI('deleteDM', {key: key}); await loadInitialData(); document.getElementById('loading').style.display = 'none'; }
+  function openModalManageMachine() { loadMachinesForManage(); document.getElementById('manNewName').value = ""; new bootstrap.Modal(document.getElementById('modalManageMachine')).show(); }
+  function loadMachinesForManage() { var kho = document.getElementById('manKho').value; var machines = [...new Set(DB.dm.filter(r => r[0] == kho).map(r => r[1]))]; var sel = document.getElementById('manOldName'); sel.innerHTML = ""; machines.forEach(m => { var opt = document.createElement('option'); opt.value = m; opt.text = m; sel.add(opt); }); }
+  async function submitRenameMachine() { var kho = document.getElementById('manKho').value; var oldName = document.getElementById('manOldName').value; var newName = document.getElementById('manNewName').value; if(!newName) return alert("Vui lòng nhập tên mới!"); document.getElementById('loading').style.display = 'flex'; await callAPI('renameMachine', {kho: kho, oldName: oldName, newName: newName}); bootstrap.Modal.getInstance(document.getElementById('modalManageMachine')).hide(); await loadInitialData(); document.getElementById('loading').style.display = 'none'; }
+  function openModalUser() { document.getElementById('admUserU').value = ""; document.getElementById('admUserU').readOnly = false; document.getElementById('admUserP').value = ""; document.getElementById('admUserN').value = ""; document.getElementById('admUserR').value = "User"; document.getElementById('admUserS').value = "Active"; new bootstrap.Modal(document.getElementById('modalAdminUser')).show(); }
+  function editUser(u) { var item = DB.users.find(x => x[0] == u); if (!item) return; document.getElementById('admUserU').value = item[0]; document.getElementById('admUserU').readOnly = true; document.getElementById('admUserP').value = item[1]; document.getElementById('admUserN').value = item[2]; document.getElementById('admUserR').value = item[3]; document.getElementById('admUserS').value = item[4]; new bootstrap.Modal(document.getElementById('modalAdminUser')).show(); }
+  async function saveAdminUser() { var data = { user: document.getElementById('admUserU').value, pass: document.getElementById('admUserP').value, name: document.getElementById('admUserN').value, role: document.getElementById('admUserR').value, status: document.getElementById('admUserS').value }; if(!data.user || !data.pass) return alert("Nhập đủ User/Pass!"); document.getElementById('loading').style.display = 'flex'; await callAPI('saveUser', {data: data}); bootstrap.Modal.getInstance(document.getElementById('modalAdminUser')).hide(); await loadInitialData(); document.getElementById('loading').style.display = 'none'; }
+  async function delUser(u) { if(!confirm("Xóa User [" + u + "]?")) return; document.getElementById('loading').style.display = 'flex'; await callAPI('deleteUser', {user: u}); await loadInitialData(); document.getElementById('loading').style.display = 'none'; }
+
+  // --- HÀM APP CŨ ---
+  function addImportRow(defaultDate) { if(!defaultDate) { var firstDate = document.querySelector('.row-date'); defaultDate = firstDate ? firstDate.value : new Date().toISOString().split('T')[0]; } var idx = rowCount++; var html = `<div class="import-row" id="row_${idx}"><i class="fas fa-times btn-remove-row" onclick="removeRow(${idx})"></i><div class="row g-3"><div class="col-md-3"><label class="form-label fw-bold small text-muted">Ngày nhập</label><input type="date" class="form-control row-date" id="date_${idx}" value="${defaultDate}" required></div><div class="col-md-9"><label class="form-label fw-bold small text-muted">Tên Hóa chất / Test</label><input class="form-control border-primary" list="listNhapHC" id="tenHC_${idx}" onchange="updateRowInput(${idx})" placeholder="Gõ để tìm kiếm..." required></div><input type="hidden" id="loai_${idx}"><input type="hidden" id="dv_${idx}"><div class="col-12" id="inputArea_${idx}"></div></div></div>`; document.getElementById('importRowsContainer').insertAdjacentHTML('beforeend', html); }
+  function removeRow(idx) { var row = document.getElementById('row_' + idx); if(row) row.remove(); }
+  function updateRowInput(idx) { var tenHC = document.getElementById('tenHC_' + idx).value; var kho = document.getElementById('nhapKho').value; var may = document.getElementById('nhapMay').value; var item = DB.dm.find(r => r[0] == kho && r[1] == may && r[2] == tenHC); var area = document.getElementById('inputArea_' + idx); if(!item) { area.innerHTML = ''; return; } var loai = item[3]; var dv = item[4]; document.getElementById('loai_' + idx).value = loai; document.getElementById('dv_' + idx).value = dv; var html = (loai === 'R1R2') ? `<div class="row g-2"><div class="col-md-6 border-end"><div class="text-primary fw-bold small mb-1">Thành phần R1 / Chính</div><div class="row g-1"><div class="col-4"><input class="form-control form-control-sm" id="lotR1_${idx}" placeholder="Lot R1" required></div><div class="col-4"><input type="date" class="form-control form-control-sm" id="hsdR1_${idx}" required></div><div class="col-4"><input type="number" class="form-control form-control-sm" id="slR1_${idx}" placeholder="SL" required></div></div></div><div class="col-md-6"><div class="text-danger fw-bold small mb-1">Thành phần R2</div><div class="row g-1"><div class="col-4"><input class="form-control form-control-sm" id="lotR2_${idx}" placeholder="Lot R2" required></div><div class="col-4"><input type="date" class="form-control form-control-sm" id="hsdR2_${idx}" required></div><div class="col-4"><input type="number" class="form-control form-control-sm" id="slR2_${idx}" placeholder="SL" required></div></div></div><div class="col-12 text-end text-muted small fst-italic mt-1">Đơn vị: ${dv}</div></div>` : `<div class="row g-2"><div class="col-12"><div class="text-success fw-bold small mb-1">Chi tiết lô hạn</div><div class="row g-1"><div class="col-4"><input class="form-control form-control-sm" id="lotR1_${idx}" placeholder="Lot" required></div><div class="col-4"><input type="date" class="form-control form-control-sm" id="hsdR1_${idx}" required></div><div class="col-4"><input type="number" class="form-control form-control-sm" id="slR1_${idx}" placeholder="SL" required></div></div></div><div class="col-12 text-end text-muted small fst-italic mt-1">Đơn vị: ${dv}</div></div>`; area.innerHTML = html; }
+  async function submitNhapBatch(e) { e.preventDefault(); var kho = document.getElementById('nhapKho').value; var may = document.getElementById('nhapMay').value; var rows = document.querySelectorAll('.import-row'); if(rows.length === 0) return alert("Chưa có dòng dữ liệu nào!"); var dataList = []; var hasError = false; rows.forEach(row => { var idx = row.id.split('_')[1]; var tenHC = document.getElementById('tenHC_' + idx).value; var exists = DB.dm.some(r => r[0] == kho && r[1] == may && r[2] == tenHC); if (!exists) { alert("Dòng hóa chất '" + tenHC + "' không hợp lệ hoặc sai Kho/Máy!"); hasError = true; return; } var itemData = { nguoi: DB.currentUser, kho: kho, may: may, tenHC: tenHC, ngayNhap: document.getElementById('date_' + idx).value, loaiNhap: document.getElementById('loai_' + idx).value, donVi: document.getElementById('dv_' + idx).value, lotR1: document.getElementById('lotR1_' + idx).value, hsdR1: document.getElementById('hsdR1_' + idx).value, slR1: document.getElementById('slR1_' + idx).value, lotR2: document.getElementById('lotR2_' + idx) ? document.getElementById('lotR2_' + idx).value : "", hsdR2: document.getElementById('hsdR2_' + idx) ? document.getElementById('hsdR2_' + idx).value : "", slR2: document.getElementById('slR2_' + idx) ? document.getElementById('slR2_' + idx).value : "" }; dataList.push(itemData); }); if(hasError) return; document.getElementById('loading').style.display = 'flex'; await callAPI('processImport', {dataList: dataList}); alert("Nhập kho thành công!"); setTodayDate(); document.getElementById('loading').style.display = 'none'; }
+  async function refreshData() { document.getElementById('loading').style.display = 'flex'; await loadInitialData(); alert("Đã cập nhật!"); filterMachine('nhap'); document.getElementById('loading').style.display = 'none'; }
+  function filterMachine(type) { var kho = document.getElementById(type + 'Kho').value; var selMay = document.getElementById(type + 'May'); if(type === 'nhap') { document.getElementById('importRowsContainer').innerHTML = ""; rowCount = 0; addImportRow(); } else { document.getElementById('xuatTenHC').value = ""; } var listId = (type === 'nhap' ? 'listNhapHC' : 'listXuatHC'); document.getElementById(listId).innerHTML = ""; selMay.innerHTML = '<option value="">-- Chọn Máy --</option>'; if(!kho) return; var machines = [...new Set(DB.dm.filter(r => r[0] == kho).map(r => r[1]))]; machines.forEach(m => { var opt = document.createElement('option'); opt.value = m; opt.text = m===""?"Không dùng máy":m; selMay.add(opt); }); if(kho === 'Vi sinh' && (machines.length===0 || machines[0]==="")) filterChem(type); }
+  function filterChem(type) { var kho = document.getElementById(type + 'Kho').value; var may = document.getElementById(type + 'May').value; if(type === 'nhap') { document.getElementById('importRowsContainer').innerHTML = ""; rowCount = 0; addImportRow(); } else { document.getElementById('xuatTenHC').value = ""; } var listId = (type === 'nhap' ? 'listNhapHC' : 'listXuatHC'); var datalist = document.getElementById(listId); datalist.innerHTML = ""; var chems = DB.dm.filter(r => r[0] == kho && r[1] == may); chems.forEach(c => { var opt = document.createElement('option'); opt.value = c[2]; datalist.appendChild(opt); }); }
+  function checkBackdate() { var d = new Date(document.getElementById('xuatNgay').value).setHours(0,0,0,0); var t = new Date().setHours(0,0,0,0); var r = document.getElementById('xuatLyDo'); if(d < t) { r.value="Quên không xuất kho"; r.readOnly=true; } else { r.value=""; r.readOnly=false; } }
+  async function submitXuat(e) { e.preventDefault(); var radioR1 = document.querySelector('input[name="radio_R1"]:checked'); var lotR1 = "", slR1 = ""; if (radioR1) { lotR1 = radioR1.value; slR1 = document.getElementById(`qty_R1_${lotR1}`).value; } var radioR2 = document.querySelector('input[name="radio_R2"]:checked'); var lotR2 = "", slR2 = ""; if (radioR2) { lotR2 = radioR2.value; slR2 = document.getElementById(`qty_R2_${lotR2}`).value; } if (!lotR1 && !lotR2) return alert("Chưa chọn Lot để xuất!"); if ((lotR1 && !slR1) || (lotR2 && !slR2)) return alert("Chưa nhập số lượng xuất!"); document.getElementById('loading').style.display = 'flex'; var data = { ngayXuat: document.getElementById('xuatNgay').value, nguoi: DB.currentUser, kho: document.getElementById('xuatKho').value, may: document.getElementById('xuatMay').value, tenHC: document.getElementById('xuatTenHC').value, lotR1: lotR1, slR1: slR1, lotR2: lotR2, slR2: slR2, loaiChiTiet: (lotR1 && lotR2) ? "Cả 2" : (lotR1 ? "R1" : "R2"), lyDo: document.getElementById('xuatLyDo').value }; await callAPI('processExport', {data: data}); alert("Xuất kho thành công!"); document.getElementById('loading').style.display = 'none'; loadStockForExport(false); }
+  function openChangePassModal() { document.getElementById('cpUser').value = DB.currentID; document.getElementById('cpOldPass').value = ""; document.getElementById('cpNewPass').value = ""; document.getElementById('cpMsg').innerText = ""; var myModal = new bootstrap.Modal(document.getElementById('modalChangePass')); myModal.show(); }
+  async function doChangePass() { var u = document.getElementById('cpUser').value; var oldP = document.getElementById('cpOldPass').value; var newP = document.getElementById('cpNewPass').value; if(!oldP || !newP) return document.getElementById('cpMsg').innerText = "Vui lòng nhập đủ thông tin!"; document.getElementById('loading').style.display = 'flex'; var res = await callAPI('changePassword', {user: u, oldPass: oldP, newPass: newP}); document.getElementById('loading').style.display = 'none'; if(res === "SUCCESS") { alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại."); doLogout(); } else { document.getElementById('cpMsg').innerText = res; } }
+  function filterTable(tableId, colIndex, query) { var filter = query.toUpperCase(); var rows = document.getElementById(tableId).getElementsByTagName("tbody")[0].getElementsByTagName("tr"); for (var i = 0; i < rows.length; i++) { var td = rows[i].getElementsByTagName("td")[colIndex]; if (td) rows[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(filter) > -1 ? "" : "none"; } }
+  
+  function filterTonKho() {
+      var k = document.getElementById("f_kho").value.toUpperCase(); var t = document.getElementById("f_ten").value.toUpperCase();
+      var c1 = document.getElementById("f_color_r1").value; var t1 = document.getElementById("f_text_r1").value.toUpperCase();
+      var c2 = document.getElementById("f_color_r2").value; var t2 = document.getElementById("f_text_r2").value.toUpperCase();
+      var rows = document.getElementById("tableTonKho").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+      for(var i=0; i<rows.length; i++){
+          var td0 = rows[i].cells[0].textContent.toUpperCase(); var td1 = rows[i].cells[1].textContent.toUpperCase();
+          var cell1 = rows[i].cells[2]; var cell2 = rows[i].cells[3];
+          var match0 = td0.indexOf(k) > -1; var match1 = td1.indexOf(t) > -1;
+          var matchC1 = (c1==="") || cell1.classList.contains(c1); var matchT1 = cell1.textContent.toUpperCase().indexOf(t1) > -1;
+          var matchC2 = (c2==="") || cell2.classList.contains(c2); var matchT2 = cell2.textContent.toUpperCase().indexOf(t2) > -1;
+          if(match0 && match1 && matchC1 && matchT1 && matchC2 && matchT2) rows[i].style.display = ""; else rows[i].style.display = "none";
+      }
+  }
+  
+  // FIX CHÍNH: Hàm load tồn kho cho tab xuất kho
+  async function loadStockForExport(manual) { 
+    var area = document.getElementById('exportContainer'); 
+    var tenHC = document.getElementById('xuatTenHC').value; 
+    if(!tenHC && !manual) return; 
+    
+    if(!manual) area.innerHTML = '<div class="local-loader"><div class="spinner-border text-danger" role="status"></div><div class="mt-2 fw-bold">Đang tải dữ liệu kho...</div></div>'; 
+    else document.getElementById('loading').style.display = 'flex'; 
+
+    // GỌI API LẤY TỒN KHO MỚI NHẤT
+    var data = await callAPI('getReport', {from: "", to: ""});
+    DB.stock = data.stock;
+
+    renderExportUI(); 
+    if(manual) { document.getElementById('loading').style.display = 'none'; alert("Đã cập nhật!"); } 
+  }
+  
+  function renderExportUI() { var key = document.getElementById('xuatKho').value + "|" + document.getElementById('xuatMay').value + "|" + document.getElementById('xuatTenHC').value; var item = DB.stock[key]; var area = document.getElementById('exportContainer'); if(!document.getElementById('xuatTenHC').value) { area.innerHTML = '<div class="text-center text-muted p-5 bg-light border rounded"><i class="fas fa-box-open fa-2x mb-2 text-secondary"></i><br>Chọn hóa chất để hiển thị danh sách Lot</div>'; return; } if(!item) { area.innerHTML = '<div class="text-danger text-center p-3 bg-light border rounded">Không có dữ liệu tồn kho</div>'; return; } var htmlR1 = generateLotList('R1', item.R1); var htmlR2 = generateLotList('R2', item.R2); var colClass = htmlR2 ? "col-md-6" : "col-12"; var displayR2 = htmlR2 ? "block" : "none"; area.innerHTML = `<div class="row g-3"><div class="${colClass}"><div class="p-3 border rounded bg-white h-100 shadow-sm"><div class="fw-bold text-primary mb-3 border-bottom pb-2">Thành phần R1 / Chính</div>${htmlR1 || '<div class="text-muted small fst-italic">Hết hàng</div>'}<div id="fefo_alert_R1" class="alert-fefo"><i class="fas fa-exclamation-triangle me-1"></i> Cảnh báo: Có Lot khác hết hạn sớm hơn!</div></div></div><div class="${colClass}" style="display:${displayR2}"><div class="p-3 border rounded bg-white h-100 shadow-sm"><div class="fw-bold text-danger mb-3 border-bottom pb-2">Thành phần R2</div>${htmlR2 || '<div class="text-muted small fst-italic">Hết hàng</div>'}<div id="fefo_alert_R2" class="alert-fefo"><i class="fas fa-exclamation-triangle me-1"></i> Cảnh báo: Có Lot khác hết hạn sớm hơn!</div></div></div></div>`; }
+  function generateLotList(type, listObj) { var arr = []; for(var k in listObj) if(listObj[k].sl > 0) arr.push({lot: k, ...listObj[k]}); arr.sort((a,b) => a.rawHsd - b.rawHsd); var bestDate = arr[0].rawHsd; return arr.map(i => { var isBest = i.rawHsd === bestDate; var cls = isBest ? "lot-best" : "lot-warn"; var icon = isBest ? "✅" : "⚠️"; var inputId = `qty_${type}_${i.lot}`; return `<div class="d-flex align-items-center justify-content-between lot-item ${cls}"><div class="flex-grow-1" onclick="document.getElementById('rad_${inputId}').checked=true; document.getElementById('${inputId}').focus(); checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"><input class="form-check-input me-2" type="radio" name="radio_${type}" id="rad_${inputId}" value="${i.lot}" onchange="checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"><label class="small cursor-pointer" for="rad_${inputId}">${icon} Lot: <b>${i.lot}</b><br><span class="text-muted ms-4">HSD: ${i.hsd} | Tồn: ${i.sl}</span></label></div><div><input type="number" id="${inputId}" class="form-control form-control-sm qty-input" placeholder="SL" min="1" max="${i.sl}" onfocus="document.getElementById('rad_${inputId}').checked=true; checkFefo('${type}', ${i.rawHsd}, ${bestDate}, ${arr.length})"></div></div>`; }).join(''); }
+  function checkFefo(type, cur, best, count) { var box = document.getElementById('fefo_alert_' + type); if(box) box.style.display = (count > 1 && cur > best) ? 'block' : 'none'; }
+  function applyDatePreset(val) { if (val === "50") { document.getElementById('histFrom').value = ""; document.getElementById('histTo').value = ""; } else { var days = parseInt(val); var to = new Date(); var from = new Date(); from.setDate(to.getDate() - days); document.getElementById('histTo').valueAsDate = to; document.getElementById('histFrom').valueAsDate = from; } loadReport(true); }
+  async function loadReport(useFilter) { 
+     var from = "", to = ""; 
+     if (useFilter) { from = document.getElementById('histFrom').value; to = document.getElementById('histTo').value; if (document.getElementById('histPreset').value === "50" && !from) { from = ""; to = ""; } } 
+     document.getElementById('loading').style.display = 'flex';
+     var data = await callAPI('getReport', {from: from, to: to});
+     DB.stock = data.stock; DB.history = data.history; renderReport(); renderHistory(); 
+     document.getElementById('loading').style.display = 'none'; 
+  }
+  
+  function exportExcel(tableId, name) { var wb = XLSX.utils.table_to_book(document.getElementById(tableId), {sheet: "Sheet1"}); XLSX.writeFile(wb, name + "_" + new Date().toISOString().slice(0,10) + ".xlsx"); }
+  
+  function exportPDF(elementId, name) {
+    var element = document.getElementById(elementId);
+    var originalOverflow = element.style.overflow; var originalMaxHeight = element.style.maxHeight; element.style.overflow = 'visible'; element.style.maxHeight = 'none';
+    var clone = element.cloneNode(true);
+    var thead = clone.querySelector('thead');
+    if(thead) { thead.classList.remove('sticky-top'); thead.style.position = 'static'; }
+    var inputs = clone.querySelectorAll('input, select, .no-print');
+    inputs.forEach(i => i.remove()); 
+
+    var tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute'; tempContainer.style.top = '-9999px'; tempContainer.style.width = '1300px';
+    tempContainer.appendChild(clone);
+    document.body.appendChild(tempContainer);
+
+    var opt = { margin: 10, filename: name + "_" + new Date().toISOString().slice(0,10) + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+    
+    html2pdf().set(opt).from(clone).save().then(function(){
+        document.body.removeChild(tempContainer);
+        element.style.overflow = originalOverflow; element.style.maxHeight = originalMaxHeight; 
+    });
+  }
+  
+  // FIX: Ép kiểu Number khi so sánh để không mất màu
+  function renderReport() { var html = ""; var now = new Date().getTime(); DB.dm.forEach(dm => { var key = dm[0] + "|" + dm[1] + "|" + dm[2]; var item = DB.stock[key]; var cfg = { minR: Number(dm[5]||0), minY: Number(dm[6]||0), dayR: Number(dm[7]||0) }; if (!item && (cfg.minR || cfg.minY)) item = {R1:{}, R2:{}}; if (!item) return; var isTwoPart = (dm[3] === 'R1R2'); function buildCol(listObj) { var total = 0; var details = ""; var colorClass = ""; for (var lot in listObj) { var s = listObj[lot]; if (s.sl > 0) { total += s.sl; var daysLeft = (s.rawHsd - now) / (1000*60*60*24); var dateStyle = (cfg.dayR > 0 && daysLeft <= cfg.dayR) ? "lot-expired" : ""; details += `<div class="lot-detail">Lot: <b>${lot}</b> (SL: <b>${s.sl}</b>) | HSD: <span class="${dateStyle}">${s.hsd}</span> (${Math.ceil(daysLeft)} ngày)</div>`; } } if (cfg.minR > 0 && total <= cfg.minR) colorClass = "cell-critical"; else if (cfg.minY > 0 && total <= cfg.minY) colorClass = "cell-warning"; else if (total > 0) colorClass = "cell-ok"; return { html: `<div><span class="total-badge">Tổng: ${total}</span></div>${details}`, cls: colorClass }; } var c1 = buildCol(item.R1); var c2 = isTwoPart ? buildCol(item.R2) : { html: '', cls: 'bg-light' }; if (c1.cls || (isTwoPart && c2.cls) || c1.html.includes('Tổng: 0') === false || (isTwoPart && c2.html.includes('Tổng: 0') === false)) { html += `<tr><td><small class="text-muted">${dm[0]}</small><br><b>${dm[1]}</b></td><td class="fw-bold text-primary">${dm[2]}</td><td class="${c1.cls}">${c1.html}</td><td class="${c2.cls}">${c2.html}</td></tr>`; } }); document.getElementById('reportBody').innerHTML = html; }
+
+  // --- SORTING LOGIC ---
+  var sortDir = -1; // -1: desc, 1: asc
+  var sortCol = 'sortTime'; // default
+
+  function sortHistory(col) {
+      if(sortCol === col) sortDir *= -1;
+      else { sortCol = col; sortDir = 1; }
+      
+      document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
+      var icon = document.getElementById('icon_' + col);
+      if(icon) {
+          icon.classList.add('active');
+          icon.className = sortDir === 1 ? 'fas fa-sort-up sort-icon active' : 'fas fa-sort-down sort-icon active';
+      }
+
+      DB.history.sort((a,b) => {
+          if(a[col] < b[col]) return -1 * sortDir;
+          if(a[col] > b[col]) return 1 * sortDir;
+          return 0;
+      });
+      renderHistory();
+  }
+
+  function renderHistory() { 
+      var html = DB.history.map(h => { 
+          // FIX TRẠNG THÁI HIỂN THỊ DỰA VÀO ACTION BACKEND TRẢ VỀ
+          var badge = (h.action === 'NHẬP' || h.type === 'NHẬP') ? '<span class="badge bg-primary">NHẬP</span>' : '<span class="badge bg-danger">XUẤT</span>'; 
+          return `<tr>
+              <td>${h.timestampStr}</td>
+              <td>${h.dateDocStr}</td>
+              <td>${h.user}</td>
+              <td class="text-center">${badge}</td>
+              <td>${h.kho}<br>${h.may}<br><b>${h.ten}</b></td>
+              <td class="small" style="line-height:1.6">${h.detailHtml || h.detail}</td>
+              <td>${h.reason}</td>
+          </tr>`; 
+      }).join(''); 
+      document.getElementById('historyBody').innerHTML = html; 
+  }
+  
+  // ============================================================
+  // HÀM XUẤT EXCEL MỚI (XỬ LÝ RIÊNG CHO LỊCH SỬ)
+  // ============================================================
+  function exportHistoryExcel() {
+      // 1. Tạo tiêu đề cột
+      var headers = [
+          "THỜI GIAN", 
+          "NGÀY NHẬP/XUẤT", 
+          "NGƯỜI THỰC HIỆN", 
+          "THAO TÁC", 
+          "KHO", 
+          "MÁY XÉT NGHIỆM", 
+          "TÊN HÓA CHẤT", 
+          "CHI TIẾT", 
+          "LÝ DO"
+      ];
+      
+      // 2. Duyệt qua dữ liệu lịch sử (lấy từ biến DB.history đã được lọc và sort)
+      // Lưu ý: Nếu muốn xuất đúng những gì đang thấy trên bảng (đã filter), ta nên duyệt DOM hoặc filter DB.history lại.
+      // Ở đây tôi sẽ duyệt DB.history để đảm bảo dữ liệu sạch, nhưng chỉ lấy những dòng khớp với ô tìm kiếm (nếu cần).
+      // Đơn giản nhất là duyệt DB.history hiện tại (đã được sort).
+
+      var data = [headers];
+
+      // Lấy danh sách các dòng TR đang hiển thị để khớp với bộ lọc tìm kiếm
+      var visibleRows = Array.from(document.querySelectorAll("#historyBody tr")).filter(row => row.style.display !== 'none');
+      
+      // Tuy nhiên, để lấy dữ liệu chuẩn xác nhất (không bị dính HTML), ta nên map lại từ DB.history nhưng check điều kiện filter.
+      // Cách nhanh nhất và chính xác nhất theo yêu cầu của bạn là duyệt mảng DB.history.
+      
+      DB.history.forEach(item => {
+          // Xử lý tách cột Kho/Máy/Tên
+          var kho = item.kho || "";
+          var may = item.may || "";
+          var ten = item.ten || "";
+
+          // Xử lý chi tiết xuống dòng (Thay <br> bằng \n)
+          // item.detailHtml đang dạng: "<b>R1:</b> ... <br> <b>R2:</b> ..."
+          // Cần strip HTML tags và thay <br> thành \n
+          var rawDetail = item.detailHtml || "";
+          // Thay thế <br> bằng xuống dòng
+          var detailText = rawDetail.replace(/<br\s*\/?>/gi, "\n");
+          // Loại bỏ các thẻ HTML còn lại (<b>, </span>...)
+          detailText = detailText.replace(/<[^>]+>/g, "");
+          // Decode các ký tự đặc biệt nếu có (ví dụ &nbsp;) - cơ bản thì replace tag là đủ đọc.
+
+          // Xác định hành động (Nhập/Xuất)
+          var actionText = (item.action === 'NHẬP' || item.type === 'NHẬP') ? "NHẬP" : "XUẤT";
+
+          var row = [
+              item.timestampStr,  // 1. Thời gian đầy đủ
+              item.dateDocStr,    // 2. Ngày nhập/xuất dd/mm/yyyy
+              item.user,
+              actionText,
+              kho,                // 3. Tách cột Kho
+              may,                // 3. Tách cột Máy
+              ten,                // 3. Tách cột Tên
+              detailText,         // 4. Chi tiết xuống dòng
+              item.reason
+          ];
+          data.push(row);
+      });
+
+      // 3. Tạo Workbook và Worksheet
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(data);
+
+      // Tự động chỉnh độ rộng cột (Optional)
+      ws['!cols'] = [{wch:20}, {wch:15}, {wch:20}, {wch:10}, {wch:15}, {wch:15}, {wch:25}, {wch:50}, {wch:20}];
+
+      // Thêm sheet vào workbook
+      XLSX.utils.book_append_sheet(wb, ws, "LichSuHoatDong");
+
+      // 4. Xuất file
+      XLSX.writeFile(wb, "Lich_Su_Hoat_Dong_" + new Date().toISOString().slice(0,10) + ".xlsx");
+  }
+
+  // --- HÀM MAKE TABLE RESIZABLE ---
+  function createResizableTable(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const cols = table.querySelectorAll('th');
+    
+    cols.forEach((col) => {
+      const resizer = document.createElement('div');
+      resizer.classList.add('resizer');
+      col.appendChild(resizer);
+      
+      let x = 0; let w = 0;
+      
+      const mouseDownHandler = function(e) {
+        x = e.clientX;
+        const styles = window.getComputedStyle(col);
+        w = parseInt(styles.width, 10);
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+        resizer.classList.add('resizing');
+      };
+      
+      const mouseMoveHandler = function(e) {
+        const dx = e.clientX - x;
+        col.style.width = `${w + dx}px`;
+      };
+      
+      const mouseUpHandler = function() {
+        document.removeEventListener('mousemove', mouseMoveHandler);
+        document.removeEventListener('mouseup', mouseUpHandler);
+        resizer.classList.remove('resizing');
+      };
+      
+      resizer.addEventListener('mousedown', mouseDownHandler);
+    });
+  }
+
+  window.onload = function() {
+     createResizableTable('tableTonKho');
+     createResizableTable('tableLichSu');
+  };
+</script>
+</body>
+</html>
