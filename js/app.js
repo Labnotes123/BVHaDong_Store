@@ -1,5 +1,5 @@
 // API URL CỦA BẠN (Cập nhật link mới từ Backend)
-const API_URL = "https://script.google.com/macros/s/AKfycbw6f88iK-6J-7pKyrROQIzNyHRALuWgGjM3MzmBkWvwimImUJkG4BT-QlBP_36rHbsDYg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyzAP5Kd30RO8SCKjzd7bAG2VEum1Bw6Y0thLZXzclm4gjgwvcwZyDvKO9vuZTS0GPNxA/exec";
 
 var DB = { dm: [], stock: {}, history: [], users: [], currentUser: "", currentID: "", role: "" };
 var rowCount = 0; var admRowCount = 0;
